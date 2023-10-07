@@ -24,6 +24,7 @@
     },
     "dependencies": {
         "clipanion": "4.0.0-rc.2",
+        "glob": "^10.3.10",
         "node-fetch": "^3.3.2"
     },
     "engines": {
