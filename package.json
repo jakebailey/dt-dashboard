@@ -23,11 +23,12 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
+        "@definitelytyped/definitions-parser": "^0.0.178",
+        "@definitelytyped/utils": "^0.0.178",
         "clipanion": "4.0.0-rc.2",
-        "glob": "^10.3.10",
         "node-fetch": "^3.3.2"
     },
     "engines": {
-        "node": ">= 18"
+        "node": ">= 18.14"
     }
 }

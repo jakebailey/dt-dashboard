@@ -1,21 +1,37 @@
+import os from "node:os";
+import path from "node:path";
+
+import {
+    getLocallyInstalledDefinitelyTyped,
+    parseDefinitions,
+    TypingsVersions,
+} from "@definitelytyped/definitions-parser";
 import { Command, Option, runExit } from "clipanion";
-import { glob } from "glob";
 
 void runExit(
+    { enableCapture: true },
     class MainCommand extends Command {
-        dtCheckout = Option.String({ required: true });
+        dtRoot = Option.String({ required: true });
 
         async execute() {
-            this.context.stdout.write(`DefinitelyTyped checkout at ${this.dtCheckout}!\n`);
+            const dtRoot = path.resolve(this.dtRoot);
+            const defs = await getAllDefinitions(dtRoot);
+            const data: ReadonlyMap<string, TypingsVersions> = (defs as any).data;
 
-            const p = await getTopLevelPackages(this.dtCheckout);
-            this.context.stdout.write(`Found ${p.length} packages!\n`);
-
-            // TODO: use DT infra instead of glob
+            for (const pkg of data.values()) {
+                for (const version of pkg.getAll()) {
+                    const { fullNpmName: typesName, unescapedName, major, minor } = version;
+                    console.log(`${typesName} ${unescapedName} ${major}.${minor}`);
+                }
+            }
         }
     },
 );
 
-function getTopLevelPackages(dtCheckout: string) {
-    return glob(`types/*`, { cwd: dtCheckout, absolute: true });
+function getAllDefinitions(dtRoot: string) {
+    return parseDefinitions(
+        getLocallyInstalledDefinitelyTyped(dtRoot),
+        { definitelyTypedPath: dtRoot, nProcesses: os.availableParallelism() },
+        console,
+    );
 }
