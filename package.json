@@ -1,15 +1,28 @@
 {
-  "name": "dt-dashboard",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "typescript": "^5.2.2"
-  }
+    "name": "dt-dashboard",
+    "version": "1.0.0",
+    "description": "",
+    "type": "module",
+    "main": "./dist/main.js",
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc --watch",
+        "prepack": "pnpm run build"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/node": "^20.8.3",
+        "@typescript-eslint/eslint-plugin": "^6.7.4",
+        "@typescript-eslint/parser": "^6.7.4",
+        "eslint": "^8.51.0",
+        "eslint-plugin-simple-import-sort": "^10.0.0",
+        "eslint-plugin-unicorn": "^48.0.1",
+        "typescript": "^5.2.2"
+    },
+    "dependencies": {
+        "@tsconfig/node18": "^18.2.2",
+        "node-fetch": "^3.3.2"
+    }
 }
