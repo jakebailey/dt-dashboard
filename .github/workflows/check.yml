@@ -36,6 +36,7 @@ jobs:
           fail-on-cache-miss: ${{ github.event.inputs.only_deploy == 'true' }}
 
       - uses: actions/checkout@v4
+        if: ${{ github.event.inputs.only_deploy == 'false' }}
         with:
           repository: DefinitelyTyped/DefinitelyTyped
           path: ./DefinitelyTyped
