@@ -60,12 +60,10 @@ class MainCommand extends Command {
         }
 
         const result = await this.#checkPackage(data, cached);
-        if (result !== undefined) {
-            await fs.promises.writeFile(cachedPath, JSON.stringify(result, undefined, 4));
-        }
+        await fs.promises.writeFile(cachedPath, JSON.stringify(result, undefined, 4));
     }
 
-    async #checkPackage(data: TypingsData, cached: CachedInfo | undefined): Promise<CachedInfo | undefined> {
+    async #checkPackage(data: TypingsData, cached: CachedInfo | undefined): Promise<CachedInfo> {
         // console.log(`${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
 
         const packageRoot = path.join(this.definitelyTypedPath, `types`, data.subDirectoryPath);
@@ -73,7 +71,7 @@ class MainCommand extends Command {
         const indexDts = await fs.promises.readFile(indexDtsPath, { encoding: `utf8` });
         const header = parseHeaderOrFail(indexDtsPath, indexDts);
         if (header.nonNpm) {
-            return undefined;
+            return { kind: `non-npm` };
         }
 
         const versionQuery = data.isLatest ? `latest`
@@ -85,9 +83,11 @@ class MainCommand extends Command {
         if (!result.ok) {
             if (result.status === 404) {
                 console.log(`${data.unescapedName} not found on npm`);
-                return null;
+                return { kind: `not-in-registry` };
             }
-            throw new Error(`${data.unescapedName} failed to fetch ${result.status} ${result.statusText}`);
+            const message = `${data.unescapedName} failed to fetch package.json: ${result.status} ${result.statusText}`;
+            console.log(message);
+            return { kind: `error`, message };
         }
 
         const contents = await result.json();
@@ -100,7 +100,7 @@ class MainCommand extends Command {
             throw e;
         }
 
-        if (packageJSON.version === cached?.latest) {
+        if (cached?.kind === `found` && packageJSON.version === cached.latest) {
             return cached;
         }
 
@@ -128,6 +128,7 @@ class MainCommand extends Command {
         }
 
         return {
+            kind: `found`,
             latest: packageJSON.version,
             outOfDate,
             hasTypes,
@@ -142,11 +143,24 @@ function compareComparableValues(a: string | undefined, b: string | undefined) {
     return a === b ? 0 : a === undefined ? -1 : b === undefined ? 1 : a < b ? -1 : 1;
 }
 
-const CachedInfo = v.object({
-    latest: v.string(),
-    outOfDate: v.boolean(),
-    hasTypes: v.boolean(),
-}).nullable();
+const CachedInfo = v.union(
+    v.object({
+        kind: v.literal(`found`),
+        latest: v.string(),
+        outOfDate: v.boolean(),
+        hasTypes: v.boolean(),
+    }),
+    v.object({
+        kind: v.literal(`not-in-registry`),
+    }),
+    v.object({
+        kind: v.literal(`non-npm`),
+    }),
+    v.object({
+        kind: v.literal(`error`),
+        message: v.string(),
+    }),
+);
 type CachedInfo = v.Infer<typeof CachedInfo>;
 
 const PackageJSON = v.object({
