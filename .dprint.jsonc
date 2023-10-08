@@ -6,7 +6,8 @@
     "typescript": {
         "quoteStyle": "preferDouble",
         "semiColons": "always",
-        "arrowFunction.useParentheses": "force"
+        "arrowFunction.useParentheses": "force",
+        "conditionalExpression.linePerExpression": false // Keep our "match/case"-ish conditionals.
     },
     "json": {
     },
