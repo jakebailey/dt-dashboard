@@ -166,6 +166,9 @@ class MainCommand extends Command {
 
         return {
             kind: `found`,
+            typesName: data.subDirectoryPath,
+            typesVersion: `${data.major}.${data.minor}`,
+            realName: data.unescapedName,
             latest: packageJSON.version,
             outOfDate,
             hasTypes,
@@ -183,6 +186,9 @@ function compareComparableValues(a: string | undefined, b: string | undefined) {
 const CachedInfo = v.union(
     v.object({
         kind: v.literal(`found`),
+        typesName: v.string(),
+        typesVersion: v.string(),
+        realName: v.string(),
         latest: v.string(),
         outOfDate: v.boolean(),
         hasTypes: v.boolean(),
