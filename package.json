@@ -15,6 +15,7 @@
     "devDependencies": {
         "@tsconfig/node18": "^18.2.2",
         "@types/node": "^20.8.3",
+        "@types/semver": "^7.5.3",
         "@typescript-eslint/eslint-plugin": "^6.7.4",
         "@typescript-eslint/parser": "^6.7.4",
         "eslint": "^8.51.0",
@@ -23,10 +24,13 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
+        "@badrap/valita": "^0.3.0",
         "@definitelytyped/definitions-parser": "^0.0.178",
+        "@definitelytyped/header-parser": "^0.0.178",
         "@definitelytyped/utils": "^0.0.178",
         "clipanion": "4.0.0-rc.2",
-        "node-fetch": "^3.3.2"
+        "node-fetch": "^3.3.2",
+        "semver": "^7.5.4"
     },
     "engines": {
         "node": ">= 18.14"
