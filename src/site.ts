@@ -110,7 +110,7 @@ export class GenerateSiteCommand extends Command {
         lines.push(``);
         lines.push(`Of the remaining ${totalCount - nonNpmCount} packages:`);
         lines.push(``);
-        lines.push(`- ${errorRows.length} had errors while fetching package.json.`);
+        lines.push(`- ${errorRows.length} had errors while fetching info.`);
         lines.push(
             `- ${notInRegistryRows.length} are missing from the npm registry and may need to be marked as non-npm.`,
         );

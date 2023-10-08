@@ -15,7 +15,7 @@ import ora from "ora";
 import PQueue from "p-queue";
 import { SemVer } from "semver";
 
-import { CachedInfo, CachedStatus, FatalError, PackageJSON } from "./common.js";
+import { CachedInfo, CachedStatus, FatalError, JSDelivrMetadata, PackageJSON } from "./common.js";
 
 export class CheckCommand extends Command {
     static override paths = [[`check`]];
@@ -29,7 +29,7 @@ export class CheckCommand extends Command {
     count!: number;
     total!: number;
 
-    #fetchQueue = new PQueue({ concurrency: 8 });
+    #fetchQueue = new PQueue({ concurrency: 20 });
 
     async execute() {
         const defs = await this.#getAllDefinitions();
@@ -59,9 +59,12 @@ export class CheckCommand extends Command {
     }
 
     #updateSpinner(name: string) {
-        if (!this.verbose) {
-            this.count++;
-            this.spinner.text = `${this.count}/${this.total} ${name}`;
+        this.count++;
+        const message = `${this.count}/${this.total} ${name}`;
+        if (this.verbose) {
+            console.log(message);
+        } else {
+            this.spinner.text = message;
         }
     }
 
@@ -136,22 +139,16 @@ export class CheckCommand extends Command {
             return { kind: `non-npm` };
         }
 
-        const versionQuery = data.isLatest ? `latest`
+        const specifier = data.isLatest ? `latest`
             : data.major === 0 ? `${data.major}.${data.minor}`
             : `${data.major}`;
 
-        const url = `https://unpkg.com/${data.unescapedName}@${versionQuery}/package.json`;
-        const result = await this.#fetchQueue.add(
-            () => fetch(url, { retry: { retries: 5, randomize: true } }),
-            { throwOnTimeout: true },
-        );
+        const url = `https://cdn.jsdelivr.net/npm/${data.unescapedName}@${specifier}/package.json`;
+        const result = await this.#fetch(url);
         if (!result.ok) {
             if (result.status === 404) {
                 this.#log(`${data.unescapedName} not found on npm`);
                 return { kind: `not-in-registry` };
-            }
-            if (result.status === 524) {
-                throw new FatalError(`timeout fetching ${url}`);
             }
             const message = `${data.unescapedName} failed to fetch package.json: ${result.status} ${result.statusText}`;
             this.#log(`${data.unescapedName} ${message}`);
@@ -172,16 +169,18 @@ export class CheckCommand extends Command {
             return cached;
         }
 
+        const currentVersion = new SemVer(packageJSON.version, { loose: true });
+        const currentVersionString = currentVersion.format();
+
         let outOfDate = false;
         let minorOutOfDate = false;
         let hasTypes = false;
 
         if (data.isLatest) {
-            const version = new SemVer(packageJSON.version, { loose: true });
-            if (version.major > data.major) {
+            if (currentVersion.major > data.major) {
                 this.#log(`${data.unescapedName} is out of date`);
                 outOfDate = true;
-            } else if (version.minor > data.minor) {
+            } else if (currentVersion.minor > data.minor) {
                 if (data.major === 0) {
                     this.#log(`${data.unescapedName} is out of date`);
                     outOfDate = true;
@@ -193,19 +192,59 @@ export class CheckCommand extends Command {
         }
 
         if (packageJSONIsTyped(packageJSON)) {
-            this.#log(`${data.unescapedName} has types`);
+            this.#log(`${data.unescapedName} has types (package.json)`);
             hasTypes = true;
         } else {
+            const url =
+                `https://data.jsdelivr.com/v1/packages/npm/${data.unescapedName}@${currentVersionString}?structure=flat`;
+            const result = await this.#fetch(url);
+            if (!result.ok) {
+                const message =
+                    `${data.unescapedName} failed to fetch jsdelivr metadata: ${result.status} ${result.statusText}`;
+                this.#log(`${data.unescapedName} ${message}`);
+                return { kind: `error`, message };
+            }
+            const contents = await result.json();
+            const metadata = JSDelivrMetadata.parse(contents, { mode: `passthrough` });
+
+            for (const file of metadata.files) {
+                if (
+                    file.name.endsWith(`.d.ts`)
+                    || file.name.endsWith(`.d.mts`)
+                    || file.name.endsWith(`.d.cts`)
+                ) {
+                    this.#log(`${data.unescapedName} has types (found ${file.name}))`);
+                    hasTypes = true;
+                    break;
+                }
+            }
+
             // TODO: stream the tarball to look for d.ts files.
         }
 
         return {
             kind: `found`,
-            current: packageJSON.version,
+            current: currentVersionString,
             outOfDate,
             minorOutOfDate,
             hasTypes,
         };
+    }
+
+    #fetch(url: string) {
+        return this.#fetchQueue.add(
+            async () => {
+                const before = Date.now();
+                const response = await fetch(url, {
+                    headers: { "User-Agent": `github.com/jakebailey/dt-dashboard` },
+                    retry: { retries: 5, randomize: true },
+                });
+                const after = Date.now();
+                this.#log(`${url} ${response.status} ${response.statusText} ${after - before}ms`);
+                return response;
+            },
+            { throwOnTimeout: true },
+        );
     }
 }
 

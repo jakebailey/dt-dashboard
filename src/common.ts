@@ -40,3 +40,10 @@ export const PackageJSON = v.object({
 export type PackageJSON = v.Infer<typeof PackageJSON>;
 
 export class FatalError extends Error {}
+
+export const JSDelivrMetadata = v.object({
+    files: v.array(v.object({
+        name: v.string(),
+    })),
+});
+export type JSDelivrMetadata = v.Infer<typeof JSDelivrMetadata>;
