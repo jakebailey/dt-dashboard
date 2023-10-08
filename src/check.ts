@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/no-null */
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -21,8 +20,9 @@ import { CachedInfo, PackageJSON } from "./common.js";
 export class CheckCommand extends Command {
     static override paths = [[`check`]];
 
-    definitelyTypedPath = Option.String({ required: true });
-    cachePath = Option.String({ required: true });
+    definitelyTypedPath = Option.String(`--dt`, { required: true });
+    input = Option.String(`--input`, { required: true });
+    output = Option.String(`--output`, { required: true });
     verbose = Option.Boolean(`--verbose`, false);
 
     spinner!: ReturnType<typeof ora>;
@@ -80,12 +80,15 @@ export class CheckCommand extends Command {
     }
 
     async #checkPackageCached(data: TypingsData) {
-        const dir = path.join(this.cachePath, data.subDirectoryPath[0]);
-        await fs.promises.mkdir(dir, { recursive: true });
-        const cachedPath = path.join(dir, `${data.subDirectoryPath.replace(/[/\\]/g, `@`)}.json`);
+        const inputDir = path.join(this.input, data.subDirectoryPath[0]);
+        const outputDir = path.join(this.output, data.subDirectoryPath[0]);
+        const filename = `${data.subDirectoryPath.replace(/[/\\]/g, `@`)}.json`;
+
+        await fs.promises.mkdir(outputDir, { recursive: true });
         let cached: CachedInfo | undefined;
         try {
-            const contents = await fs.promises.readFile(cachedPath, { encoding: `utf8` });
+            const inputPath = path.join(inputDir, filename);
+            const contents = await fs.promises.readFile(inputPath, { encoding: `utf8` });
             cached = CachedInfo.parse(JSON.parse(contents));
         } catch {
             // ignore
@@ -99,12 +102,13 @@ export class CheckCommand extends Command {
             result = { kind: `error`, message: `${(e as any).message || e}` };
         }
 
-        await fs.promises.writeFile(cachedPath, JSON.stringify(result, undefined, 4));
+        const outputPath = path.join(outputDir, filename);
+        await fs.promises.writeFile(outputPath, JSON.stringify(result, undefined, 4));
         this.#updateSpinner(data.unescapedName);
     }
 
     async #checkPackage(data: TypingsData, cached: CachedInfo | undefined): Promise<CachedInfo> {
-        // this.#log(`${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
+        this.#log(`checking ${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
 
         const packageRoot = path.join(this.definitelyTypedPath, `types`, data.subDirectoryPath);
         const indexDtsPath = path.join(packageRoot, `index.d.ts`);

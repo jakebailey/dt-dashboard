@@ -1,0 +1,54 @@
+name: Update support window diagram
+on:
+  # When our dependencies change
+  push:
+    paths:
+      - .github/workflows/support-window.yml
+      - package.json
+      - scripts/support-window.js
+      - scripts/jsconfig.json
+  # Manually, when TypeScript is released
+  # https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
+  workflow_dispatch:
+  schedule:
+    # Weekly at 16:00 UTC on Monday
+    - cron: '0 16 * * 1'
+
+# publishing can take longer than 30 minutes but we never want to
+# run more than one publish job at a time
+concurrency: 1
+
+env:
+  CI: true
+  PNPM_CACHE_FOLDER: .pnpm-store
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: latest
+          run_install: true
+      - run: pnpm build
+      - uses: actions/cache/restore@v3
+        with:
+          path: ./cacheIn
+          key: dt-cache-${{ github.run_id }}-${{ github.run_attempt}}
+          restore-keys: dt-cache-
+
+      - uses: actions/checkout@v4
+        with:
+          repository: DefinitelyTyped/DefinitelyTyped
+          path: ./DefinitelyTyped
+
+      - run: node dist/main.js check --dt ./DefinitelyTyped --input ./cacheIn --output ./cacheOut --verbose
+
+      - uses: actions/cache/save@v3
+        if: always()
+        with:
+          path: ./cacheOut
+          key: dt-cache-${{ github.run_id }}-${{ github.run_attempt}}
