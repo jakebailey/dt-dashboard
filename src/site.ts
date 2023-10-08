@@ -24,6 +24,10 @@ export class GenerateSiteCommand extends Command {
             data.push(CachedInfo.parse(json));
         }
 
+        if (data.length === 0) {
+            throw new Error(`No data found`);
+        }
+
         data.sort((a, b) => collator.compare(a.subDirectoryPath, b.subDirectoryPath));
 
         type Row = [
