@@ -61,7 +61,6 @@ jobs:
           path: ./site
 
       - uses: actions/cache/save@v3
-        if: always()
         with:
           path: ./cache
           key: dt-cache-${{ github.run_id }}-${{ github.run_attempt }}
