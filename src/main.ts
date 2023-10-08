@@ -4,6 +4,7 @@ import path from "node:path";
 import {
     getLocallyInstalledDefinitelyTyped,
     parseDefinitions,
+    TypingsData,
     TypingsVersions,
 } from "@definitelytyped/definitions-parser";
 import { Command, Option, runExit } from "clipanion";
@@ -20,8 +21,7 @@ void runExit(
 
             for (const pkg of data.values()) {
                 for (const version of pkg.getAll()) {
-                    const { fullNpmName: typesName, unescapedName, major, minor } = version;
-                    console.log(`${typesName} ${unescapedName} ${major}.${minor}`);
+                    await checkPackage(version);
                 }
             }
         }
@@ -34,4 +34,9 @@ function getAllDefinitions(dtRoot: string) {
         { definitelyTypedPath: dtRoot, nProcesses: os.availableParallelism() },
         console,
     );
+}
+
+async function checkPackage(data: TypingsData) {
+    const { fullNpmName, unescapedName, major, minor } = data;
+    console.log(`${fullNpmName} ${unescapedName} ${major}.${minor}`);
 }
