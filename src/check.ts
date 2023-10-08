@@ -234,13 +234,13 @@ export class CheckCommand extends Command {
     #fetch(url: string) {
         return this.#fetchQueue.add(
             async () => {
-                const before = Date.now();
+                // const before = Date.now();
                 const response = await fetch(url, {
                     headers: { "User-Agent": `github.com/jakebailey/dt-dashboard` },
                     retry: { retries: 5, randomize: true },
                 });
-                const after = Date.now();
-                this.#log(`${url} ${response.status} ${response.statusText} ${after - before}ms`);
+                // const after = Date.now();
+                // this.#log(`${url} ${response.status} ${response.statusText} ${after - before}ms`);
                 return response;
             },
             { throwOnTimeout: true },
