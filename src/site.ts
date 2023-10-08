@@ -28,72 +28,76 @@ export class GenerateSiteCommand extends Command {
 
         type Row = [
             typesPackageLink: string,
-            latestPackageLink: string,
+            currentPackageLink: string,
             statusOutdated: string,
             statusNotNeeded: string,
         ];
+        const RowIndex = {
+            typesPackageLink: 0,
+            currentPackageLink: 1,
+            statusOutdated: 2,
+            statusNotNeeded: 3,
+        };
 
-        const rows: Row[] = [];
+        const errorRows: Row[] = [];
+        const notInRegistryRows: Row[] = [];
+        const outOfDateRows: Row[] = [];
+        const minorOutOfDateRows: Row[] = [];
+        const dtNotNeededRows: Row[] = [];
 
         const totalCount = data.length;
-        let errorCount = 0;
-        let notInRegistryCount = 0;
         let nonNpmCount = 0;
-        let outOfDateCount = 0;
-        let minorOutOfDateCount = 0;
-        let dtNotNeededCount = 0;
 
         for (const d of data) {
-            const typesPackageLink =
-                `[${d.fullNpmName}@${d.typesVersion}](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/${d.subDirectoryPath})`;
-            let latestPackageLink: string;
-            let statusOutdated = `✅`;
-            let statusNotNeeded = `✅`;
+            const row: Row = [
+                `[${d.fullNpmName}@${d.typesVersion}](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/${d.subDirectoryPath})`,
+                `❓`,
+                `✅`,
+                `✅`,
+            ];
 
             switch (d.status.kind) {
                 case `error`:
-                    errorCount++;
-                    latestPackageLink = `—`;
-                    statusOutdated = `—`;
-                    statusNotNeeded = `—`;
+                    row[RowIndex.currentPackageLink] = `❓`;
+                    row[RowIndex.statusOutdated] = `❓`;
+                    row[RowIndex.statusNotNeeded] = `❓`;
+                    errorRows.push(row);
                     break;
                 case `found`: {
                     const hasProblem = d.status.hasTypes || d.status.outOfDate || d.status.minorOutOfDate;
                     if (!hasProblem) {
                         continue;
                     }
-                    latestPackageLink =
+                    row[RowIndex.currentPackageLink] =
                         `[${d.unescapedName}@${d.status.current}](https://www.npmjs.com/package/${d.unescapedName}/v/${d.status.current})`;
 
                     if (d.status.outOfDate) {
-                        statusOutdated = `❌`;
-                        outOfDateCount++;
+                        row[RowIndex.statusOutdated] = `❌`;
+                        outOfDateRows.push(row);
                     }
 
                     if (d.status.minorOutOfDate) {
-                        statusOutdated = `⚠️`;
-                        minorOutOfDateCount++;
+                        row[RowIndex.statusOutdated] = `⚠️`;
+                        minorOutOfDateRows.push(row);
                     }
 
                     if (d.status.hasTypes) {
-                        statusNotNeeded = `❌`;
-                        dtNotNeededCount++;
+                        row[RowIndex.statusNotNeeded] = `❌`;
+                        dtNotNeededRows.push(row);
                     }
 
                     break;
                 }
                 case `not-in-registry`:
-                    notInRegistryCount++;
-                    latestPackageLink = `❓`;
-                    statusOutdated = `❓`;
-                    statusNotNeeded = `❓`;
+                    row[RowIndex.currentPackageLink] = `❓`;
+                    row[RowIndex.statusOutdated] = `❓`;
+                    row[RowIndex.statusNotNeeded] = `❓`;
+                    notInRegistryRows.push(row);
                     break;
                 case `non-npm`:
                     nonNpmCount++;
                     continue;
             }
-
-            rows.push([typesPackageLink, latestPackageLink, statusOutdated, statusNotNeeded]);
         }
 
         const lines: string[] = [];
@@ -106,21 +110,45 @@ export class GenerateSiteCommand extends Command {
         lines.push(``);
         lines.push(`Of the remaining ${totalCount - nonNpmCount} packages:`);
         lines.push(``);
-        lines.push(`- ${errorCount} errored while fetching package.json.`);
-        lines.push(`- ${notInRegistryCount} are missing from the npm registry and may need to be marked as non-npm.`);
-        lines.push(`- ${outOfDateCount} are out of date (major version or 0.x mismatch).`);
-        lines.push(`- ${minorOutOfDateCount} are out of date minorly (excluding 0.x packages).`);
-        lines.push(`- ${dtNotNeededCount} are now typed and can be removed from DefinitelyTyped.`);
+        lines.push(`- ${errorRows.length} had errors while fetching package.json.`);
+        lines.push(
+            `- ${notInRegistryRows.length} are missing from the npm registry and may need to be marked as non-npm.`,
+        );
+        lines.push(`- ${dtNotNeededRows.length} are now typed and can be removed from DefinitelyTyped.`);
+        lines.push(`- ${outOfDateRows.length} are out of date (major version or 0.x mismatch).`);
+        lines.push(`- ${minorOutOfDateRows.length} are out of date minorly (excluding 0.x packages).`);
         lines.push(``);
 
-        lines.push(`## Packages`);
-        lines.push(``);
-        lines.push(`| Types | Upstream | Outdated? | DT Needed? |`);
-        lines.push(`| --- | --- | --- | --- |`);
-        for (const row of rows) {
-            lines.push(`| ${row.join(` | `)} |`);
+        function pushRows(rows: Row[]) {
+            lines.push(`| Types | Current | Outdated? | DT Needed? |`);
+            lines.push(`| --- | --- | --- | --- |`);
+            for (const row of rows) {
+                lines.push(`| ${row.join(` | `)} |`);
+            }
         }
-        lines.push(``);
+
+        function pushSection(title: string, rows: Row[]) {
+            lines.push(`# ${title}`);
+            lines.push(``);
+            lines.push(`<details><summary>Expand...</summary>`);
+            lines.push(``);
+            pushRows(rows);
+            lines.push(``);
+            lines.push(`</details>`);
+            lines.push(``);
+            lines.push(`<br>`);
+            lines.push(``);
+        }
+
+        pushSection(`Errors`, errorRows);
+
+        pushSection(`Missing from registry`, notInRegistryRows);
+
+        pushSection(`DT not needed`, dtNotNeededRows);
+
+        pushSection(`Out of date`, outOfDateRows);
+
+        pushSection(`Out of date minorly`, minorOutOfDateRows);
 
         await fs.promises.mkdir(this.output, { recursive: true });
         await fs.promises.writeFile(path.join(this.output, `README.md`), lines.join(`\n`));
