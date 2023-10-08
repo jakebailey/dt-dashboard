@@ -106,8 +106,6 @@ export class GenerateSiteCommand extends Command {
 
         const lines: string[] = [];
 
-        lines.push(`# DT Dashboard`);
-        lines.push(``);
         lines.push(`There are currently ${totalCount} packages in DefinitelyTyped.`);
         lines.push(``);
         lines.push(`Of them, ${nonNpmCount} are non-npm packages.`);
