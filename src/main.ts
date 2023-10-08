@@ -13,6 +13,7 @@ import {
 import { parseHeaderOrFail } from "@definitelytyped/header-parser";
 import { Command, Option, runExit } from "clipanion";
 import fetch from "node-fetch";
+import ora from "ora";
 import PQueue from "p-queue";
 import { SemVer } from "semver";
 
@@ -21,6 +22,11 @@ const fetchQueue = new PQueue({ concurrency: 4 });
 class MainCommand extends Command {
     definitelyTypedPath = Option.String({ required: true });
     cachePath = Option.String({ required: true });
+    verbose = Option.Boolean(`--verbose`, false);
+
+    spinner!: ReturnType<typeof ora>;
+    count!: number;
+    total!: number;
 
     async execute() {
         const defs = await this.#getAllDefinitions();
@@ -36,7 +42,30 @@ class MainCommand extends Command {
 
         allTypingsData.sort((a, b) => compareComparableValues(a.subDirectoryPath, b.subDirectoryPath));
 
+        this.count = 0;
+        this.total = allTypingsData.length;
+
+        if (!this.verbose) {
+            this.spinner = ora(`0/${this.total}`).start();
+        }
         await Promise.all(allTypingsData.map((pkg) => this.#checkPackageCached(pkg)));
+
+        if (!this.verbose) {
+            this.spinner.stop();
+        }
+    }
+
+    #updateSpinner(name: string) {
+        if (!this.verbose) {
+            this.count++;
+            this.spinner.text = `${this.count}/${this.total} ${name}`;
+        }
+    }
+
+    #log(message?: any, ...optionalParams: any[]) {
+        if (this.verbose) {
+            console.log(message, ...optionalParams);
+        }
     }
 
     async #getAllDefinitions() {
@@ -59,12 +88,20 @@ class MainCommand extends Command {
             // ignore
         }
 
-        const result = await this.#checkPackage(data, cached);
+        let result: CachedInfo | undefined;
+        try {
+            result = await this.#checkPackage(data, cached);
+        } catch (e) {
+            this.#log(`${data.unescapedName} ${e}`);
+            result = { kind: `error`, message: `${(e as any).message || e}` };
+        }
+
         await fs.promises.writeFile(cachedPath, JSON.stringify(result, undefined, 4));
+        this.#updateSpinner(data.unescapedName);
     }
 
     async #checkPackage(data: TypingsData, cached: CachedInfo | undefined): Promise<CachedInfo> {
-        // console.log(`${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
+        // this.#log(`${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
 
         const packageRoot = path.join(this.definitelyTypedPath, `types`, data.subDirectoryPath);
         const indexDtsPath = path.join(packageRoot, `index.d.ts`);
@@ -82,11 +119,11 @@ class MainCommand extends Command {
         const result = await fetchQueue.add(() => fetch(url), { throwOnTimeout: true });
         if (!result.ok) {
             if (result.status === 404) {
-                console.log(`${data.unescapedName} not found on npm`);
+                this.#log(`${data.unescapedName} not found on npm`);
                 return { kind: `not-in-registry` };
             }
             const message = `${data.unescapedName} failed to fetch package.json: ${result.status} ${result.statusText}`;
-            console.log(message);
+            this.#log(`${data.unescapedName} ${message}`);
             return { kind: `error`, message };
         }
 
@@ -94,10 +131,10 @@ class MainCommand extends Command {
         let packageJSON: PackageJSON;
         try {
             packageJSON = PackageJSON.parse(contents, { mode: `passthrough` });
-        } catch (e) {
-            console.log(`${data.unescapedName} failed to parse package.json`);
-            console.log(contents);
-            throw e;
+        } catch {
+            const message = `failed to parse package.json`;
+            this.#log(`${data.unescapedName} ${message}`);
+            return { kind: `error`, message };
         }
 
         if (cached?.kind === `found` && packageJSON.version === cached.latest) {
@@ -108,22 +145,22 @@ class MainCommand extends Command {
         let hasTypes = false;
 
         if (data.isLatest) {
-            const version = new SemVer(packageJSON.version);
+            const version = new SemVer(packageJSON.version, { loose: true });
             if (data.major === 0) {
                 if (version.minor > data.minor) {
-                    console.log(`${data.unescapedName} is out of date`);
+                    this.#log(`${data.unescapedName} is out of date`);
                     outOfDate = true;
                 }
             } else {
                 if (version.major > data.major) {
-                    console.log(`${data.unescapedName} is out of date`);
+                    this.#log(`${data.unescapedName} is out of date`);
                     outOfDate = true;
                 }
             }
         }
 
         if (packageJSONIsTyped(packageJSON)) {
-            console.log(`${data.unescapedName} has types`);
+            this.#log(`${data.unescapedName} has types`);
             hasTypes = true;
         }
 
