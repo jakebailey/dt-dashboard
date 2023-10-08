@@ -33,6 +33,7 @@ jobs:
           path: ./cache
           key: dt-cache-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: dt-cache-
+          fail-on-cache-miss: ${{ github.event.inputs.only_deploy == 'true' }}
 
       - uses: actions/checkout@v4
         with:
