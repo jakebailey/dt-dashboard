@@ -10,7 +10,7 @@ import {
 } from "@definitelytyped/definitions-parser";
 import { parseHeaderOrFail } from "@definitelytyped/header-parser";
 import { Command, Option } from "clipanion";
-import fetch from "node-fetch";
+import fetch from "make-fetch-happen";
 import ora from "ora";
 import PQueue from "p-queue";
 import { SemVer } from "semver";
@@ -141,7 +141,10 @@ export class CheckCommand extends Command {
             : `${data.major}`;
 
         const url = `https://unpkg.com/${data.unescapedName}@${versionQuery}/package.json`;
-        const result = await this.#fetchQueue.add(() => fetch(url), { throwOnTimeout: true });
+        const result = await this.#fetchQueue.add(
+            () => fetch(url, { retry: { retries: 5, randomize: true } }),
+            { throwOnTimeout: true },
+        );
         if (!result.ok) {
             if (result.status === 404) {
                 this.#log(`${data.unescapedName} not found on npm`);
