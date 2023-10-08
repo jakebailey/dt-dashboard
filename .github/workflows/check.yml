@@ -1,6 +1,10 @@
 name: Check
 on:
   workflow_dispatch:
+    inputs:
+      only_deploy:
+        description: 'Only deploy'
+        default: 'false'
   schedule:
     # Daily at 16:00 UTC
     - cron: '0 16 * * *'
@@ -25,6 +29,7 @@ jobs:
           run_install: true
       - run: pnpm build
       - uses: actions/cache/restore@v3
+        id: cache
         with:
           path: ./cacheIn
           key: dt-cache-${{ github.run_id }}-${{ github.run_attempt }}
@@ -36,6 +41,10 @@ jobs:
           path: ./DefinitelyTyped
 
       - run: node dist/main.js check --dt ./DefinitelyTyped --input ./cacheIn --output ./cacheOut --verbose
+        if: ${{ github.event.inputs.only_deploy == 'false' }}
+
+      - run: mv ./cacheIn ./cacheOut
+        if: ${{ github.event.inputs.only_deploy == 'true' }}
 
       - run: node dist/main.js generate-site --input ./cacheOut --output rawSite
 
