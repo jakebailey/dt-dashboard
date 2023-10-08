@@ -130,6 +130,8 @@ dist
 .pnp.*
 
 
-DefinitelyTyped
-cacheIn
-cacheOut
+DefinitelyTyped/
+cacheIn/
+cacheOut/
+rawSite/
+site/

@@ -1,11 +1,8 @@
 import * as v from "@badrap/valita";
 
-export const CachedInfo = v.union(
+export const CachedStatus = v.union(
     v.object({
         kind: v.literal(`found`),
-        typesName: v.string(),
-        typesVersion: v.string(),
-        realName: v.string(),
         latest: v.string(),
         outOfDate: v.boolean(),
         hasTypes: v.boolean(),
@@ -21,6 +18,14 @@ export const CachedInfo = v.union(
         message: v.string(),
     }),
 );
+export type CachedStatus = v.Infer<typeof CachedStatus>;
+
+export const CachedInfo = v.object({
+    typesName: v.string(),
+    typesVersion: v.string(),
+    realName: v.string(),
+    status: CachedStatus,
+});
 export type CachedInfo = v.Infer<typeof CachedInfo>;
 
 export const PackageJSON = v.object({

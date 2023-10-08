@@ -15,7 +15,7 @@ import ora from "ora";
 import PQueue from "p-queue";
 import { SemVer } from "semver";
 
-import { CachedInfo, PackageJSON } from "./common.js";
+import { CachedInfo, CachedStatus, PackageJSON } from "./common.js";
 
 export class CheckCommand extends Command {
     static override paths = [[`check`]];
@@ -94,20 +94,27 @@ export class CheckCommand extends Command {
             // ignore
         }
 
-        let result: CachedInfo | undefined;
+        let status: CachedStatus | undefined;
         try {
-            result = await this.#checkPackage(data, cached);
+            status = await this.#checkPackage(data, cached?.status);
         } catch (e) {
             this.#log(`${data.unescapedName} ${e}`);
-            result = { kind: `error`, message: `${(e as any).message || e}` };
+            status = { kind: `error`, message: `${(e as any).message || e}` };
         }
 
+        cached = {
+            typesName: data.fullNpmName,
+            typesVersion: `${data.major}.${data.minor}`,
+            realName: data.unescapedName,
+            status,
+        };
+
         const outputPath = path.join(outputDir, filename);
-        await fs.promises.writeFile(outputPath, JSON.stringify(result, undefined, 4));
+        await fs.promises.writeFile(outputPath, JSON.stringify(cached, undefined, 4));
         this.#updateSpinner(data.unescapedName);
     }
 
-    async #checkPackage(data: TypingsData, cached: CachedInfo | undefined): Promise<CachedInfo> {
+    async #checkPackage(data: TypingsData, cached: CachedStatus | undefined): Promise<CachedStatus> {
         this.#log(`checking ${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
 
         const packageRoot = path.join(this.definitelyTypedPath, `types`, data.subDirectoryPath);
@@ -175,9 +182,6 @@ export class CheckCommand extends Command {
 
         return {
             kind: `found`,
-            typesName: data.subDirectoryPath,
-            typesVersion: `${data.major}.${data.minor}`,
-            realName: data.unescapedName,
             latest: packageJSON.version,
             outOfDate,
             hasTypes,
