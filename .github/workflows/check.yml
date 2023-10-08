@@ -40,7 +40,7 @@ jobs:
           path: ./DefinitelyTyped
 
       - run: |
-          mv ./cache ./cacheIn
+          mv ./cache ./cacheIn || true
           node dist/main.js check --dt ./DefinitelyTyped --input ./cacheIn --output ./cache --verbose
         if: ${{ github.event.inputs.only_deploy == 'false' }}
 
