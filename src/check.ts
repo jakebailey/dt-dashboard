@@ -15,7 +15,7 @@ import ora from "ora";
 import PQueue from "p-queue";
 import { SemVer } from "semver";
 
-import { CachedInfo, CachedStatus, PackageJSON } from "./common.js";
+import { CachedInfo, CachedStatus, FatalError, PackageJSON } from "./common.js";
 
 export class CheckCommand extends Command {
     static override paths = [[`check`]];
@@ -94,18 +94,29 @@ export class CheckCommand extends Command {
             // ignore
         }
 
+        const typesVersion = `${data.major}.${data.minor}`;
+
+        if (cached?.typesVersion !== typesVersion) {
+            cached = undefined;
+        }
+
         let status: CachedStatus | undefined;
         try {
             status = await this.#checkPackage(data, cached?.status);
         } catch (e) {
             this.#log(`${data.unescapedName} ${e}`);
+            if (e instanceof FatalError) {
+                throw e;
+            }
             status = { kind: `error`, message: `${(e as any).message || e}` };
         }
 
         cached = {
-            typesName: data.fullNpmName,
-            typesVersion: `${data.major}.${data.minor}`,
-            realName: data.unescapedName,
+            dashboardVersion: 1,
+            fullNpmName: data.fullNpmName,
+            subDirectoryPath: data.subDirectoryPath,
+            typesVersion,
+            unescapedName: data.unescapedName,
             status,
         };
 
@@ -115,7 +126,7 @@ export class CheckCommand extends Command {
     }
 
     async #checkPackage(data: TypingsData, cached: CachedStatus | undefined): Promise<CachedStatus> {
-        this.#log(`checking ${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
+        // this.#log(`checking ${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
 
         const packageRoot = path.join(this.definitelyTypedPath, `types`, data.subDirectoryPath);
         const indexDtsPath = path.join(packageRoot, `index.d.ts`);
@@ -136,6 +147,9 @@ export class CheckCommand extends Command {
                 this.#log(`${data.unescapedName} not found on npm`);
                 return { kind: `not-in-registry` };
             }
+            if (result.status === 524) {
+                throw new FatalError(`timeout fetching ${url}`);
+            }
             const message = `${data.unescapedName} failed to fetch package.json: ${result.status} ${result.statusText}`;
             this.#log(`${data.unescapedName} ${message}`);
             return { kind: `error`, message };
@@ -151,24 +165,26 @@ export class CheckCommand extends Command {
             return { kind: `error`, message };
         }
 
-        if (cached?.kind === `found` && packageJSON.version === cached.latest) {
+        if (cached?.kind === `found` && packageJSON.version === cached.current) {
             return cached;
         }
 
         let outOfDate = false;
+        let minorOutOfDate = false;
         let hasTypes = false;
 
         if (data.isLatest) {
             const version = new SemVer(packageJSON.version, { loose: true });
-            if (data.major === 0) {
-                if (version.minor > data.minor) {
+            if (version.major > data.major) {
+                this.#log(`${data.unescapedName} is out of date`);
+                outOfDate = true;
+            } else if (version.minor > data.minor) {
+                if (data.major === 0) {
                     this.#log(`${data.unescapedName} is out of date`);
                     outOfDate = true;
-                }
-            } else {
-                if (version.major > data.major) {
-                    this.#log(`${data.unescapedName} is out of date`);
-                    outOfDate = true;
+                } else {
+                    this.#log(`${data.unescapedName} is out of date minorly`);
+                    minorOutOfDate = true;
                 }
             }
         }
@@ -182,8 +198,9 @@ export class CheckCommand extends Command {
 
         return {
             kind: `found`,
-            latest: packageJSON.version,
+            current: packageJSON.version,
             outOfDate,
+            minorOutOfDate,
             hasTypes,
         };
     }

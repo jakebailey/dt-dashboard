@@ -3,8 +3,9 @@ import * as v from "@badrap/valita";
 export const CachedStatus = v.union(
     v.object({
         kind: v.literal(`found`),
-        latest: v.string(),
+        current: v.string(),
         outOfDate: v.boolean(),
+        minorOutOfDate: v.boolean(),
         hasTypes: v.boolean(),
     }),
     v.object({
@@ -21,9 +22,11 @@ export const CachedStatus = v.union(
 export type CachedStatus = v.Infer<typeof CachedStatus>;
 
 export const CachedInfo = v.object({
-    typesName: v.string(),
+    dashboardVersion: v.literal(1),
+    fullNpmName: v.string(),
+    subDirectoryPath: v.string(),
     typesVersion: v.string(),
-    realName: v.string(),
+    unescapedName: v.string(),
     status: CachedStatus,
 });
 export type CachedInfo = v.Infer<typeof CachedInfo>;
@@ -35,3 +38,5 @@ export const PackageJSON = v.object({
     exports: v.unknown().optional(),
 });
 export type PackageJSON = v.Infer<typeof PackageJSON>;
+
+export class FatalError extends Error {}

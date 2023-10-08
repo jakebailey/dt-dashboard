@@ -37,7 +37,7 @@ jobs:
 
       - run: node dist/main.js check --dt ./DefinitelyTyped --input ./cacheIn --output ./cacheOut --verbose
 
-      - run: node dist/main.js generate --input ./cacheOut --output rawSite
+      - run: node dist/main.js generate-site --input ./cacheOut --output rawSite
 
       - name: Setup Pages
         uses: actions/configure-pages@v3

@@ -8,8 +8,8 @@ import { CachedInfo } from "./common.js";
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: `base` });
 
-export class GenerateCommand extends Command {
-    static override paths = [[`generate`]];
+export class GenerateSiteCommand extends Command {
+    static override paths = [[`generate-site`]];
 
     input = Option.String(`--input`, { required: true });
     output = Option.String(`--output`, { required: true });
@@ -24,16 +24,13 @@ export class GenerateCommand extends Command {
             data.push(CachedInfo.parse(json));
         }
 
-        data.sort((a, b) =>
-            collator.compare(a.typesName, b.typesName) || collator.compare(a.typesVersion, b.typesVersion)
-        );
+        data.sort((a, b) => collator.compare(a.subDirectoryPath, b.subDirectoryPath));
 
         type Row = [
             typesPackageLink: string,
-            typesVersion: string,
-            realPackageLink: string,
-            realPackageVersion: string,
-            upstreamIsTyped: string,
+            latestPackageLink: string,
+            statusOutdated: string,
+            statusNotNeeded: string,
         ];
 
         const rows: Row[] = [];
@@ -43,55 +40,60 @@ export class GenerateCommand extends Command {
         let notInRegistryCount = 0;
         let nonNpmCount = 0;
         let outOfDateCount = 0;
+        let minorOutOfDateCount = 0;
         let dtNotNeededCount = 0;
 
         for (const d of data) {
-            const typesPackageLink = `[${d.typesName}](https://www.npmjs.com/package/${d.typesName})`;
-            const typesVersion = d.typesVersion;
-            let realPackageLink: string;
-            let realPackageVersion: string;
-            let dtIsNeeded: string;
+            const typesPackageLink =
+                `[${d.fullNpmName}@${d.typesVersion}](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/${d.subDirectoryPath})`;
+            let latestPackageLink: string;
+            let statusOutdated = `✅`;
+            let statusNotNeeded = `✅`;
 
             switch (d.status.kind) {
                 case `error`:
                     errorCount++;
-                    realPackageLink = `—`;
-                    realPackageVersion = `—`;
-                    dtIsNeeded = `—`;
+                    latestPackageLink = `—`;
+                    statusOutdated = `—`;
+                    statusNotNeeded = `—`;
                     break;
-                case `found`:
-                    if (!d.status.hasTypes && !d.status.outOfDate) {
+                case `found`: {
+                    const hasProblem = d.status.hasTypes || d.status.outOfDate || d.status.minorOutOfDate;
+                    if (!hasProblem) {
                         continue;
                     }
-                    realPackageLink =
-                        `[${d.realName}](https://www.npmjs.com/package/${d.realName}/v/${d.status.latest})`;
+                    latestPackageLink =
+                        `[${d.unescapedName}@${d.status.current}](https://www.npmjs.com/package/${d.unescapedName}/v/${d.status.current})`;
+
                     if (d.status.outOfDate) {
-                        realPackageVersion = `⚠️ ${d.status.latest}`;
+                        statusOutdated = `❌`;
                         outOfDateCount++;
-                    } else {
-                        realPackageVersion = d.status.latest;
+                    }
+
+                    if (d.status.minorOutOfDate) {
+                        statusOutdated = `⚠️`;
+                        minorOutOfDateCount++;
                     }
 
                     if (d.status.hasTypes) {
-                        dtIsNeeded = `❌`;
+                        statusNotNeeded = `❌`;
                         dtNotNeededCount++;
-                    } else {
-                        dtIsNeeded = `✅`;
                     }
 
                     break;
+                }
                 case `not-in-registry`:
                     notInRegistryCount++;
-                    realPackageLink = `❓`;
-                    realPackageVersion = `❓`;
-                    dtIsNeeded = `❓`;
+                    latestPackageLink = `❓`;
+                    statusOutdated = `❓`;
+                    statusNotNeeded = `❓`;
                     break;
                 case `non-npm`:
                     nonNpmCount++;
                     continue;
             }
 
-            rows.push([typesPackageLink, typesVersion, realPackageLink, realPackageVersion, dtIsNeeded]);
+            rows.push([typesPackageLink, latestPackageLink, statusOutdated, statusNotNeeded]);
         }
 
         const lines: string[] = [];
@@ -107,13 +109,14 @@ export class GenerateCommand extends Command {
         lines.push(`- ${errorCount} errored while fetching package.json.`);
         lines.push(`- ${notInRegistryCount} are missing from the npm registry and may need to be marked as non-npm.`);
         lines.push(`- ${outOfDateCount} are out of date (major version or 0.x mismatch).`);
+        lines.push(`- ${minorOutOfDateCount} are out of date minorly (excluding 0.x packages).`);
         lines.push(`- ${dtNotNeededCount} are now typed and can be removed from DefinitelyTyped.`);
         lines.push(``);
 
         lines.push(`## Packages`);
         lines.push(``);
-        lines.push(`| Types Package | Types Version | Real Package | Real Package Version | DT Needed? |`);
-        lines.push(`| ------------- | ------------- | ------------ | -------------------- | ---------- |`);
+        lines.push(`| Types | Upstream | Outdated? | DT Needed? |`);
+        lines.push(`| --- | --- | --- | --- |`);
         for (const row of rows) {
             lines.push(`| ${row.join(` | `)} |`);
         }
