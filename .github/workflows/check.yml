@@ -46,7 +46,8 @@ jobs:
       - run: mv ./cacheIn ./cacheOut
         if: ${{ github.event.inputs.only_deploy == 'true' }}
 
-      - run: node dist/main.js generate-site --input ./cacheOut --output rawSite
+      - run: node dist/main.js generate-site --input ./cacheOut --output ./rawSite
+      - run: cp ./_config.yml rawSite/_config.yml
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
