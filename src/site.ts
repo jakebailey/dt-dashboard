@@ -129,7 +129,7 @@ export class GenerateSiteCommand extends Command {
         lines.push(
             `- ${unpublishedVersionRows.length} appear to contain types for an unpublished version of their package.`,
         );
-        lines.push(`- ${dtNotNeededRows.length} are now typed and can be removed from DefinitelyTyped.`);
+        lines.push(`- ${dtNotNeededRows.length} appear to be typed upstream and may be removable.`);
         lines.push(`- ${outOfDateRows.length} are out of date (major version or 0.x mismatch).`);
         lines.push(`- ${minorOutOfDateRows.length} are out of date minorly (excluding 0.x packages).`);
         lines.push(``);
@@ -158,7 +158,7 @@ export class GenerateSiteCommand extends Command {
         pushSection(`Errors`, errorRows);
         pushSection(`Missing from registry`, notInRegistryRows);
         pushSection(`Unpublished version`, unpublishedVersionRows);
-        pushSection(`DT not needed`, dtNotNeededRows);
+        pushSection(`Potentially removable`, dtNotNeededRows);
         pushSection(`Out of date`, outOfDateRows);
         pushSection(`Out of date minorly`, minorOutOfDateRows);
 
