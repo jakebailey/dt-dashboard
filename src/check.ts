@@ -147,6 +147,22 @@ export class CheckCommand extends Command {
         const result = await this.#fetch(url);
         if (!result.ok) {
             if (result.status === 404) {
+                const result = await this.#fetch(
+                    `https://cdn.jsdelivr.net/npm/${data.unescapedName}@latest/package.json`,
+                );
+                if (result.ok) {
+                    const contents = await result.json();
+                    let packageJSON: PackageJSON;
+                    try {
+                        packageJSON = PackageJSON.parse(contents, { mode: `passthrough` });
+                    } catch {
+                        const message = `failed to parse package.json`;
+                        this.#log(`${data.unescapedName} ${message}`);
+                        return { kind: `error`, message };
+                    }
+                    return { kind: `unpublished-version`, latest: packageJSON.version };
+                }
+
                 this.#log(`${data.unescapedName} not found on npm`);
                 return { kind: `not-in-registry` };
             }
@@ -172,21 +188,20 @@ export class CheckCommand extends Command {
         const currentVersion = new SemVer(packageJSON.version, { loose: true });
         const currentVersionString = currentVersion.format();
 
-        let outOfDate = false;
-        let minorOutOfDate = false;
+        let outOfDate: `major` | `minor` | undefined;
         let hasTypes = false;
 
         if (data.isLatest) {
             if (currentVersion.major > data.major) {
                 this.#log(`${data.unescapedName} is out of date`);
-                outOfDate = true;
+                outOfDate = `major`;
             } else if (currentVersion.minor > data.minor) {
                 if (data.major === 0) {
                     this.#log(`${data.unescapedName} is out of date`);
-                    outOfDate = true;
+                    outOfDate = `major`;
                 } else {
                     this.#log(`${data.unescapedName} is out of date minorly`);
-                    minorOutOfDate = true;
+                    outOfDate = `minor`;
                 }
             }
         }
@@ -226,7 +241,6 @@ export class CheckCommand extends Command {
             kind: `found`,
             current: currentVersionString,
             outOfDate,
-            minorOutOfDate,
             hasTypes,
         };
     }

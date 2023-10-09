@@ -45,6 +45,7 @@ export class GenerateSiteCommand extends Command {
 
         const errorRows: Row[] = [];
         const notInRegistryRows: Row[] = [];
+        const unpublishedVersionRows: Row[] = [];
         const outOfDateRows: Row[] = [];
         const minorOutOfDateRows: Row[] = [];
         const dtNotNeededRows: Row[] = [];
@@ -68,19 +69,19 @@ export class GenerateSiteCommand extends Command {
                     errorRows.push(row);
                     break;
                 case `found`: {
-                    const hasProblem = d.status.hasTypes || d.status.outOfDate || d.status.minorOutOfDate;
+                    const hasProblem = d.status.hasTypes || d.status.outOfDate;
                     if (!hasProblem) {
                         continue;
                     }
                     row[RowIndex.currentPackageLink] =
                         `[${d.unescapedName}@${d.status.current}](https://www.npmjs.com/package/${d.unescapedName}/v/${d.status.current})`;
 
-                    if (d.status.outOfDate) {
+                    if (d.status.outOfDate === `major`) {
                         row[RowIndex.statusOutdated] = `❌`;
                         outOfDateRows.push(row);
                     }
 
-                    if (d.status.minorOutOfDate) {
+                    if (d.status.outOfDate === `minor`) {
                         row[RowIndex.statusOutdated] = `⚠️`;
                         minorOutOfDateRows.push(row);
                     }
@@ -98,9 +99,18 @@ export class GenerateSiteCommand extends Command {
                     row[RowIndex.statusNotNeeded] = `❓`;
                     notInRegistryRows.push(row);
                     break;
+                case `unpublished-version`:
+                    row[RowIndex.currentPackageLink] =
+                        `[${d.unescapedName}@${d.status.latest}](https://www.npmjs.com/package/${d.unescapedName}/v/${d.status.latest})`;
+                    row[RowIndex.statusOutdated] = `❓`;
+                    row[RowIndex.statusNotNeeded] = `❓`;
+                    unpublishedVersionRows.push(row);
+                    break;
                 case `non-npm`:
                     nonNpmCount++;
                     continue;
+                default:
+                    // d.status.kind satisfies never;
             }
         }
 
@@ -115,6 +125,9 @@ export class GenerateSiteCommand extends Command {
         lines.push(`- ${errorRows.length} had errors while fetching info.`);
         lines.push(
             `- ${notInRegistryRows.length} are missing from the npm registry and may need to be marked as non-npm.`,
+        );
+        lines.push(
+            `- ${unpublishedVersionRows.length} appear to contain types for an unpublished version of their package.`,
         );
         lines.push(`- ${dtNotNeededRows.length} are now typed and can be removed from DefinitelyTyped.`);
         lines.push(`- ${outOfDateRows.length} are out of date (major version or 0.x mismatch).`);
@@ -143,13 +156,10 @@ export class GenerateSiteCommand extends Command {
         }
 
         pushSection(`Errors`, errorRows);
-
         pushSection(`Missing from registry`, notInRegistryRows);
-
+        pushSection(`Unpublished version`, unpublishedVersionRows);
         pushSection(`DT not needed`, dtNotNeededRows);
-
         pushSection(`Out of date`, outOfDateRows);
-
         pushSection(`Out of date minorly`, minorOutOfDateRows);
 
         await fs.promises.mkdir(this.output, { recursive: true });

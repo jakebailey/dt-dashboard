@@ -4,12 +4,15 @@ export const CachedStatus = v.union(
     v.object({
         kind: v.literal(`found`),
         current: v.string(),
-        outOfDate: v.boolean(),
-        minorOutOfDate: v.boolean(),
+        outOfDate: v.union(v.literal(`major`), v.literal(`minor`)).optional(),
         hasTypes: v.boolean(),
     }),
     v.object({
         kind: v.literal(`not-in-registry`),
+    }),
+    v.object({
+        kind: v.literal(`unpublished-version`),
+        latest: v.string(),
     }),
     v.object({
         kind: v.literal(`non-npm`),
