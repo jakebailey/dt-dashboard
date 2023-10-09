@@ -160,6 +160,7 @@ export class CheckCommand extends Command {
                         this.#log(`${data.unescapedName} ${message}`);
                         return { kind: `error`, message };
                     }
+                    this.#log(`${data.unescapedName} did not match ${specifier} but package does exist on npm`);
                     return { kind: `unpublished-version`, latest: packageJSON.version };
                 }
 
