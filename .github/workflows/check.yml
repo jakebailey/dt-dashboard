@@ -30,13 +30,13 @@ jobs:
       - run: pnpm build
       - uses: actions/cache/restore@v3
         with:
-          path: ./cache
+          path: ./cache # This path must match the path in the `save` step below, otherwise it doesn't work.
           key: dt-cache-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: dt-cache-
-          fail-on-cache-miss: ${{ github.event.inputs.only_deploy == 'true' }}
+          fail-on-cache-miss: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.only_deploy == 'true' }}
 
       - uses: actions/checkout@v4
-        if: ${{ github.event.inputs.only_deploy == 'false' }}
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.only_deploy == 'false' }}
         with:
           repository: DefinitelyTyped/DefinitelyTyped
           path: ./DefinitelyTyped
@@ -44,7 +44,7 @@ jobs:
       - run: |
           mv ./cache ./cacheIn || true
           node dist/main.js check --dt ./DefinitelyTyped --input ./cacheIn --output ./cache --verbose
-        if: ${{ github.event.inputs.only_deploy == 'false' }}
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.only_deploy == 'false' }}
 
       - run: node dist/main.js generate-site --input ./cache --output ./rawSite
       - run: cp ./_config.yml rawSite/_config.yml
@@ -63,6 +63,7 @@ jobs:
           path: ./site
 
       - uses: actions/cache/save@v3
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.only_deploy == 'false' }}
         with:
           path: ./cache
           key: dt-cache-${{ github.run_id }}-${{ github.run_attempt }}
