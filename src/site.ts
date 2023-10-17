@@ -109,7 +109,7 @@ export class GenerateSiteCommand extends Command {
                     break;
                 case `unpublished`:
                     row[RowIndex.currentPackageLink] =
-                        `[${d.unescapedName}}](https://registry.npmjs.org/${d.unescapedName}/)`;
+                        `[${d.unescapedName}](https://registry.npmjs.org/${d.unescapedName}/)`;
                     row[RowIndex.statusOutdated] = `❓`;
                     row[RowIndex.statusNotNeeded] = `❓`;
                     unpublishedRows.push(row);
