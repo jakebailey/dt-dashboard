@@ -196,6 +196,9 @@ export class CheckCommand extends Command {
             return cached;
         }
 
+        // TODO: some packages publish with the version string entirely wrong within package.json,
+        // so we can't use this method to resolve versions all of the time.
+        // Again, need to use the registry instead.
         const currentVersion = new SemVer(packageJSON.version, { loose: true });
         const currentVersionString = currentVersion.format();
 
