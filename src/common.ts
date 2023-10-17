@@ -49,20 +49,23 @@ export type PackageJSON = v.Infer<typeof PackageJSON>;
 
 export class FatalError extends Error {}
 
-export const MetadataFile = v.object({
+const MetadataFile = v.object({
     type: v.literal(`file`),
-    name: v.string(),
+    name: v.string().optional(),
+    path: v.string().optional(),
 });
-export type MetadataFile = v.Infer<typeof MetadataFile>;
+type MetadataFile = v.Infer<typeof MetadataFile>;
 
 type MetadataDirectory = {
     type: `directory`;
-    name: string;
+    name?: string | undefined;
+    path?: string | undefined;
     files?: (MetadataFile | MetadataDirectory)[] | undefined;
 };
-export const MetadataDirectory: v.Type<MetadataDirectory> = v.object({
+const MetadataDirectory: v.Type<MetadataDirectory> = v.object({
     type: v.literal(`directory`),
-    name: v.string(),
+    name: v.string().optional(),
+    path: v.string().optional(),
     files: v.array(v.union(MetadataFile, v.lazy(() => MetadataDirectory))).optional(),
 });
 
@@ -85,10 +88,13 @@ export function findInMetadata(metadata: Metadata, fn: (filename: string) => boo
     // eslint-disable-next-line unicorn/consistent-function-scoping
     function* iterate(parent: string, files: (MetadataFile | MetadataDirectory)[]): Generator<string> {
         for (const file of files) {
+            const absPath = file.path ?? (file.name ? path.resolve(parent, file.name) : undefined);
+            if (!absPath) throw new Error(`File has no name or path: ${JSON.stringify(file)}`);
+
             if (file.type === `file`) {
-                yield path.posix.resolve(parent, file.name);
+                yield absPath;
             } else if (file.files) {
-                yield* iterate(path.posix.resolve(parent, file.name), file.files);
+                yield* iterate(absPath, file.files);
             }
         }
     }

@@ -295,6 +295,7 @@ export class CheckCommand extends Command {
                 const response = await fetch(url, {
                     headers: { "User-Agent": `github.com/jakebailey/dt-dashboard` },
                     retry: { retries: 5, randomize: true },
+                    timeout: 60_000,
                 });
                 // const after = Date.now();
                 // this.#log(`${url} ${response.status} ${response.statusText} ${after - before}ms`);
