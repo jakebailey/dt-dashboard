@@ -224,15 +224,13 @@ export class CheckCommand extends Command {
             this.#log(`${data.unescapedName} has types (package.json)`);
             hasTypes = true;
         } else {
-            const result = await this.#tryGetPackageMetadata(data.unescapedName, currentVersionString);
-            if (!result.ok) {
+            const { response, metadata } = await this.#tryGetPackageMetadata(data.unescapedName, currentVersionString);
+            if (response) {
                 const message =
                     `${data.unescapedName} failed to fetch jsdelivr metadata: ${result.status} ${result.statusText}`;
                 this.#log(`${data.unescapedName} ${message}`);
                 return { kind: `error`, message };
             }
-            const contents = await result.json();
-            const metadata = Metadata.parse(contents, { mode: `passthrough` });
 
             hasTypes = findInMetadata(metadata, (filename) => {
                 if (filename.includes(`/node_modules/`)) {
@@ -273,14 +271,28 @@ export class CheckCommand extends Command {
 
     async #tryGetPackageMetadata(name: string, specifier: string) {
         const url = `https://data.jsdelivr.com/v1/packages/npm/${name}@${specifier}?structure=tree`;
-        let result = await this.#fetch(url);
-        if (!result.ok) {
+        let response = await this.#fetch(url);
+        let metadata;
+
+        if (response.ok) {
+            try {
+                metadata = Metadata.parse(await response.json());
+            } catch {
+                // ignore
+            }
+        }
+        if (!response.ok || !metadata) {
             // Sometimes the info is too big for jsdelivr to handle, so we try unpkg instead.
             // Their APIs return similar enough results to be compatible.
             const url = `https://unpkg.com/${name}@${specifier}/?meta`;
-            result = await this.#fetch(url);
+            response = await this.#fetch(url);
+            if (!response.ok) {
+                return { response };
+            }
+            metadata = Metadata.parse(await response.json());
         }
-        return result;
+
+        return { metadata };
     }
 
     #fetch(url: string) {
