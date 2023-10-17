@@ -15,7 +15,7 @@ import ora from "ora";
 import PQueue from "p-queue";
 import { SemVer } from "semver";
 
-import { CachedInfo, CachedStatus, FatalError, JSDelivrMetadata, PackageJSON } from "./common.js";
+import { CachedInfo, CachedStatus, FatalError, findInMetadata, Metadata, PackageJSON } from "./common.js";
 
 export class CheckCommand extends Command {
     static override paths = [[`check`]];
@@ -225,35 +225,39 @@ export class CheckCommand extends Command {
             hasTypes = true;
         } else {
             const url =
-                `https://data.jsdelivr.com/v1/packages/npm/${data.unescapedName}@${currentVersionString}?structure=flat`;
-            const result = await this.#fetch(url);
+                `https://data.jsdelivr.com/v1/packages/npm/${data.unescapedName}@${currentVersionString}?structure=tree`;
+            let result = await this.#fetch(url);
             if (!result.ok) {
-                const message =
-                    `${data.unescapedName} failed to fetch jsdelivr metadata: ${result.status} ${result.statusText}`;
-                this.#log(`${data.unescapedName} ${message}`);
-                return { kind: `error`, message };
+                // Sometimes the info is too big for jsdelivr to handle, so we try unpkg instead.
+                // Their APIs return similar enough results to be compatible.
+                const url = `https://unpkg.com/${data.unescapedName}@${currentVersionString}/?meta`;
+                result = await this.#fetch(url);
+                if (!result.ok) {
+                    const message =
+                        `${data.unescapedName} failed to fetch jsdelivr metadata: ${result.status} ${result.statusText}`;
+                    this.#log(`${data.unescapedName} ${message}`);
+                    return { kind: `error`, message };
+                }
             }
             const contents = await result.json();
-            const metadata = JSDelivrMetadata.parse(contents, { mode: `passthrough` });
+            const metadata = Metadata.parse(contents, { mode: `passthrough` });
 
-            for (const file of metadata.files) {
-                if (file.name.includes(`/node_modules/`)) {
+            hasTypes = findInMetadata(metadata, (filename) => {
+                if (filename.includes(`/node_modules/`)) {
                     // I can't believe you've done this.
-                    continue;
+                    return false;
                 }
-
                 if (
-                    file.name.endsWith(`.d.ts`)
-                    || file.name.endsWith(`.d.mts`)
-                    || file.name.endsWith(`.d.cts`)
+                    filename.endsWith(`.d.ts`)
+                    || filename.endsWith(`.d.mts`)
+                    || filename.endsWith(`.d.cts`)
                 ) {
-                    this.#log(`${data.unescapedName} has types (found ${file.name}))`);
-                    hasTypes = true;
-                    break;
+                    this.#log(`${data.unescapedName} has types (found ${filename}))`);
+                    return true;
                 }
-            }
 
-            // TODO: stream the tarball to look for d.ts files.
+                return false;
+            });
         }
 
         return {

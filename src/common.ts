@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import * as v from "@badrap/valita";
 
 export const CachedStatus = v.union(
@@ -47,9 +49,47 @@ export type PackageJSON = v.Infer<typeof PackageJSON>;
 
 export class FatalError extends Error {}
 
-export const JSDelivrMetadata = v.object({
-    files: v.array(v.object({
-        name: v.string(),
-    })),
+export const MetadataFile = v.object({
+    type: v.literal(`file`),
+    name: v.string(),
 });
-export type JSDelivrMetadata = v.Infer<typeof JSDelivrMetadata>;
+export type MetadataFile = v.Infer<typeof MetadataFile>;
+
+type MetadataDirectory = {
+    type: `directory`;
+    name: string;
+    files?: (MetadataFile | MetadataDirectory)[] | undefined;
+};
+export const MetadataDirectory: v.Type<MetadataDirectory> = v.object({
+    type: v.literal(`directory`),
+    name: v.string(),
+    files: v.array(v.union(MetadataFile, v.lazy(() => MetadataDirectory))).optional(),
+});
+
+export const Metadata = v.object({
+    files: v.array(v.union(MetadataFile, MetadataDirectory)).optional(),
+});
+export type Metadata = v.Infer<typeof Metadata>;
+
+export function findInMetadata(metadata: Metadata, fn: (filename: string) => boolean): boolean {
+    if (metadata.files) {
+        for (const filename of iterate(`/`, metadata.files)) {
+            const result = fn(filename);
+            if (result) {
+                return true;
+            }
+        }
+    }
+    return false;
+
+    // eslint-disable-next-line unicorn/consistent-function-scoping
+    function* iterate(parent: string, files: (MetadataFile | MetadataDirectory)[]): Generator<string> {
+        for (const file of files) {
+            if (file.type === `file`) {
+                yield path.posix.resolve(parent, file.name);
+            } else if (file.files) {
+                yield* iterate(path.posix.resolve(parent, file.name), file.files);
+            }
+        }
+    }
+}
