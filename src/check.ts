@@ -146,6 +146,9 @@ export class CheckCommand extends Command {
                 this.#log(`${data.unescapedName} has been entirely unpublished from npm`);
                 return { kind: `unpublished` };
             }
+        } else if (regstryResult.status === 404) {
+            this.#log(`${data.unescapedName} not found on npm`);
+            return { kind: `not-in-registry` };
         }
         // TODO: do version resolution locally
 
@@ -234,6 +237,11 @@ export class CheckCommand extends Command {
             const metadata = JSDelivrMetadata.parse(contents, { mode: `passthrough` });
 
             for (const file of metadata.files) {
+                if (file.name.includes(`/node_modules/`)) {
+                    // I can't believe you've done this.
+                    continue;
+                }
+
                 if (
                     file.name.endsWith(`.d.ts`)
                     || file.name.endsWith(`.d.mts`)
