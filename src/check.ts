@@ -115,7 +115,7 @@ export class CheckCommand extends Command {
         }
 
         cached = {
-            dashboardVersion: 1,
+            dashboardVersion: 2,
             fullNpmName: data.fullNpmName,
             subDirectoryPath: data.subDirectoryPath,
             typesVersion,
@@ -161,7 +161,16 @@ export class CheckCommand extends Command {
                         return { kind: `error`, message };
                     }
                     this.#log(`${data.unescapedName} did not match ${specifier} but package does exist on npm`);
-                    return { kind: `unpublished-version`, latest: packageJSON.version };
+                    return { kind: `missing-version`, latest: packageJSON.version };
+                }
+
+                const regstryResult = await this.#fetch(`https://registry.npmjs.org/${data.unescapedName}`);
+                if (regstryResult.ok) {
+                    const contents = await regstryResult.json() as { versions?: {}; } | undefined;
+                    if (!contents?.versions) {
+                        this.#log(`${data.unescapedName} did not match ${specifier} and is unpublished`);
+                        return { kind: `unpublished` };
+                    }
                 }
 
                 this.#log(`${data.unescapedName} not found on npm`);

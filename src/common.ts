@@ -11,7 +11,10 @@ export const CachedStatus = v.union(
         kind: v.literal(`not-in-registry`),
     }),
     v.object({
-        kind: v.literal(`unpublished-version`),
+        kind: v.literal(`unpublished`),
+    }),
+    v.object({
+        kind: v.literal(`missing-version`),
         latest: v.string(),
     }),
     v.object({
@@ -25,7 +28,7 @@ export const CachedStatus = v.union(
 export type CachedStatus = v.Infer<typeof CachedStatus>;
 
 export const CachedInfo = v.object({
-    dashboardVersion: v.literal(1),
+    dashboardVersion: v.literal(2),
     fullNpmName: v.string(),
     subDirectoryPath: v.string(),
     typesVersion: v.string(),

@@ -45,7 +45,8 @@ export class GenerateSiteCommand extends Command {
 
         const errorRows: Row[] = [];
         const notInRegistryRows: Row[] = [];
-        const unpublishedVersionRows: Row[] = [];
+        const unpublishedRows: Row[] = [];
+        const missingVersion: Row[] = [];
         const outOfDateRows: Row[] = [];
         const minorOutOfDateRows: Row[] = [];
         const dtNotNeededRows: Row[] = [];
@@ -99,12 +100,19 @@ export class GenerateSiteCommand extends Command {
                     row[RowIndex.statusNotNeeded] = `❓`;
                     notInRegistryRows.push(row);
                     break;
-                case `unpublished-version`:
+                case `missing-version`:
                     row[RowIndex.currentPackageLink] =
                         `[${d.unescapedName}@${d.status.latest}](https://www.npmjs.com/package/${d.unescapedName}/v/${d.status.latest})`;
                     row[RowIndex.statusOutdated] = `❓`;
                     row[RowIndex.statusNotNeeded] = `❓`;
-                    unpublishedVersionRows.push(row);
+                    missingVersion.push(row);
+                    break;
+                case `unpublished`:
+                    row[RowIndex.currentPackageLink] =
+                        `[${d.unescapedName}}](https://registry.npmjs.org/${d.unescapedName}/)`;
+                    row[RowIndex.statusOutdated] = `❓`;
+                    row[RowIndex.statusNotNeeded] = `❓`;
+                    unpublishedRows.push(row);
                     break;
                 case `non-npm`:
                     nonNpmCount++;
@@ -127,7 +135,10 @@ export class GenerateSiteCommand extends Command {
             `- ${notInRegistryRows.length} are missing from the npm registry and may need to be marked as non-npm.`,
         );
         lines.push(
-            `- ${unpublishedVersionRows.length} appear to contain types for an unpublished version of their package.`,
+            `- ${unpublishedRows.length} appear to contain types for a package that has been unpublished.`,
+        );
+        lines.push(
+            `- ${missingVersion.length} appear to contain types for a version that does not match any on npm.`,
         );
         lines.push(`- ${dtNotNeededRows.length} appear to be typed upstream and may be removable.`);
         lines.push(`- ${outOfDateRows.length} are out of date (major version or 0.x mismatch).`);
@@ -157,7 +168,8 @@ export class GenerateSiteCommand extends Command {
 
         pushSection(`Errors`, errorRows);
         pushSection(`Missing from registry`, notInRegistryRows);
-        pushSection(`Unpublished version`, unpublishedVersionRows);
+        pushSection(`Unpublished`, unpublishedRows);
+        pushSection(`Missing versions`, missingVersion);
         pushSection(`Potentially removable`, dtNotNeededRows);
         pushSection(`Out of date`, outOfDateRows);
         pushSection(`Out of date minorly`, minorOutOfDateRows);
