@@ -13,9 +13,12 @@ import { Command, Option } from "clipanion";
 import fetch from "make-fetch-happen";
 import ora from "ora";
 import PQueue from "p-queue";
+import pacote from "pacote";
 import { SemVer } from "semver";
 
 import { CachedInfo, CachedStatus, FatalError, findInMetadata, Metadata, PackageJSON } from "./common.js";
+
+const dtsRegExp = /\.d\.[cm]?ts$/;
 
 export class CheckCommand extends Command {
     static override paths = [[`check`]];
@@ -28,8 +31,6 @@ export class CheckCommand extends Command {
     spinner!: ReturnType<typeof ora>;
     count!: number;
     total!: number;
-
-    #fetchQueues = new Map<string, PQueue>();
 
     async execute() {
         const defs = await this.#getAllDefinitions();
@@ -115,7 +116,7 @@ export class CheckCommand extends Command {
         }
 
         cached = {
-            dashboardVersion: 5,
+            dashboardVersion: 6,
             fullNpmName: data.fullNpmName,
             subDirectoryPath: data.subDirectoryPath,
             typesVersion,
@@ -139,58 +140,36 @@ export class CheckCommand extends Command {
             return { kind: `non-npm` };
         }
 
-        const regstryResult = await this.#fetch(`https://registry.npmjs.org/${data.unescapedName}`);
-        if (regstryResult.ok) {
-            const contents = await regstryResult.json() as { versions?: {}; } | undefined;
-            if (!contents?.versions || Object.keys(contents.versions).length === 0) {
-                this.#log(`${data.unescapedName} has been entirely unpublished from npm`);
-                return { kind: `unpublished` };
-            }
-        } else if (regstryResult.status === 404) {
-            this.#log(`${data.unescapedName} not found on npm`);
-            return { kind: `not-in-registry` };
-        }
-        // TODO: do version resolution locally
-
         const specifier = data.isLatest ? `latest`
             : data.major === 0 ? `${data.major}.${data.minor}`
             : `${data.major}`;
 
-        const result = await this.#tryGetPackageJSON(data.unescapedName, specifier);
-        if (!result.ok) {
-            if (result.status === 404) {
-                const result = await this.#tryGetPackageJSON(data.unescapedName, `latest`);
-                if (result.ok) {
-                    const contents = await result.json();
-                    let packageJSON: PackageJSON;
-                    try {
-                        packageJSON = PackageJSON.parse(contents, { mode: `passthrough` });
-                    } catch {
-                        const message = `failed to parse package.json`;
-                        this.#log(`${data.unescapedName} ${message}`);
-                        return { kind: `error`, message };
-                    }
-                    this.#log(`${data.unescapedName} did not match ${specifier} but package does exist on npm`);
-                    return { kind: `missing-version`, latest: packageJSON.version };
-                }
+        let fullManifest;
+        try {
+            fullManifest = await this.#getManifest(data.unescapedName, specifier, true);
+        } catch (_e) {
+            const e = _e as { code?: string; versions?: string[]; };
 
+            if (e.code === `E404`) {
                 this.#log(`${data.unescapedName} not found on npm`);
                 return { kind: `not-in-registry` };
             }
-            const message = `${data.unescapedName} failed to fetch package.json: ${result.status} ${result.statusText}`;
+
+            if (e.code === `ETARGET`) {
+                if (!e.versions || e.versions.length === 0) {
+                    this.#log(`${data.unescapedName} has no versions`);
+                    return { kind: `unpublished` };
+                }
+                this.#log(`${data.unescapedName} did not match ${specifier} but package does exist on npm`);
+                return { kind: `missing-version` };
+            }
+
+            const message = `${data.unescapedName} failed to resolve manifest: ${e.code}`;
             this.#log(`${data.unescapedName} ${message}`);
             return { kind: `error`, message };
         }
 
-        const contents = await result.json();
-        let packageJSON: PackageJSON;
-        try {
-            packageJSON = PackageJSON.parse(contents, { mode: `passthrough` });
-        } catch {
-            const message = `failed to parse package.json`;
-            this.#log(`${data.unescapedName} ${message}`);
-            return { kind: `error`, message };
-        }
+        const packageJSON = fullManifest;
 
         if (cached?.kind === `found` && packageJSON.version === cached.current) {
             return cached;
@@ -203,7 +182,7 @@ export class CheckCommand extends Command {
         const currentVersionString = currentVersion.format();
 
         let outOfDate: `major` | `minor` | undefined;
-        let hasTypes = false;
+        let hasTypes: "package.json" | "file" | undefined;
 
         if (data.isLatest) {
             if (currentVersion.major > data.major) {
@@ -222,32 +201,32 @@ export class CheckCommand extends Command {
 
         if (packageJSONIsTyped(packageJSON)) {
             this.#log(`${data.unescapedName} has types (package.json)`);
-            hasTypes = true;
+            hasTypes = `package.json`;
         } else {
             const { response, metadata } = await this.#tryGetPackageMetadata(data.unescapedName, currentVersionString);
             if (response) {
                 const message =
-                    `${data.unescapedName} failed to fetch jsdelivr metadata: ${result.status} ${result.statusText}`;
+                    `${data.unescapedName} failed to fetch jsdelivr metadata: ${response.status} ${response.statusText}`;
                 this.#log(`${data.unescapedName} ${message}`);
                 return { kind: `error`, message };
             }
 
-            hasTypes = findInMetadata(metadata, (filename) => {
-                if (filename.includes(`/node_modules/`)) {
-                    // I can't believe you've done this.
-                    return false;
-                }
-                if (
-                    filename.endsWith(`.d.ts`)
-                    || filename.endsWith(`.d.mts`)
-                    || filename.endsWith(`.d.cts`)
-                ) {
-                    this.#log(`${data.unescapedName} has types (found ${filename}))`);
-                    return true;
-                }
+            if (
+                findInMetadata(metadata, (filename) => {
+                    if (filename.includes(`/node_modules/`)) {
+                        // I can't believe you've done this.
+                        return false;
+                    }
+                    if (dtsRegExp.test(filename)) {
+                        this.#log(`${data.unescapedName} has types (found ${filename}))`);
+                        return true;
+                    }
 
-                return false;
-            });
+                    return false;
+                })
+            ) {
+                hasTypes = `file`;
+            }
         }
 
         return {
@@ -258,15 +237,13 @@ export class CheckCommand extends Command {
         };
     }
 
-    async #tryGetPackageJSON(name: string, specifier: string) {
-        const url = `https://cdn.jsdelivr.net/npm/${name}@${specifier}/package.json`;
-        let result = await this.#fetch(url);
-        if (!result.ok && result.status !== 404) {
-            // try unpkg
-            const url = `https://unpkg.com/${name}@${specifier}/package.json`;
-            result = await this.#fetch(url);
-        }
-        return result;
+    #pacoteQueue = new PQueue({ concurrency: 20 });
+    async #getManifest(name: string, specifier: string, fullMetadata: boolean) {
+        const result = await this.#pacoteQueue.add(
+            () => pacote.manifest(`${name}@${specifier}`, { fullMetadata }),
+            { throwOnTimeout: true },
+        );
+        return PackageJSON.parse(result, { mode: `passthrough` });
     }
 
     async #tryGetPackageMetadata(name: string, specifier: string) {
@@ -276,7 +253,7 @@ export class CheckCommand extends Command {
 
         if (response.ok) {
             try {
-                metadata = Metadata.parse(await response.json());
+                metadata = Metadata.parse(await response.json(), { mode: `passthrough` });
             } catch {
                 // ignore
             }
@@ -289,12 +266,13 @@ export class CheckCommand extends Command {
             if (!response.ok) {
                 return { response };
             }
-            metadata = Metadata.parse(await response.json());
+            metadata = Metadata.parse(await response.json(), { mode: `passthrough` });
         }
 
         return { metadata };
     }
 
+    #fetchQueues = new Map<string, PQueue>();
     #fetch(url: string) {
         const parsed = new URL(url);
 

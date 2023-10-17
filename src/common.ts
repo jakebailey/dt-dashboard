@@ -7,7 +7,7 @@ export const CachedStatus = v.union(
         kind: v.literal(`found`),
         current: v.string(),
         outOfDate: v.union(v.literal(`major`), v.literal(`minor`)).optional(),
-        hasTypes: v.boolean(),
+        hasTypes: v.union(v.literal(`package.json`), v.literal(`file`)).optional(),
     }),
     v.object({
         kind: v.literal(`not-in-registry`),
@@ -17,7 +17,6 @@ export const CachedStatus = v.union(
     }),
     v.object({
         kind: v.literal(`missing-version`),
-        latest: v.string(),
     }),
     v.object({
         kind: v.literal(`non-npm`),
@@ -30,7 +29,7 @@ export const CachedStatus = v.union(
 export type CachedStatus = v.Infer<typeof CachedStatus>;
 
 export const CachedInfo = v.object({
-    dashboardVersion: v.literal(5),
+    dashboardVersion: v.literal(6),
     fullNpmName: v.string(),
     subDirectoryPath: v.string(),
     typesVersion: v.string(),
@@ -88,7 +87,7 @@ export function findInMetadata(metadata: Metadata, fn: (filename: string) => boo
     // eslint-disable-next-line unicorn/consistent-function-scoping
     function* iterate(parent: string, files: (MetadataFile | MetadataDirectory)[]): Generator<string> {
         for (const file of files) {
-            const absPath = file.path ?? (file.name ? path.resolve(parent, file.name) : undefined);
+            const absPath = file.path ?? (file.name === undefined ? undefined : path.resolve(parent, file.name));
             if (!absPath) throw new Error(`File has no name or path: ${JSON.stringify(file)}`);
 
             if (file.type === `file`) {

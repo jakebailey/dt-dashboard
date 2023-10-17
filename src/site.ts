@@ -46,7 +46,7 @@ export class GenerateSiteCommand extends Command {
         const errorRows: Row[] = [];
         const notInRegistryRows: Row[] = [];
         const unpublishedRows: Row[] = [];
-        const missingVersion: Row[] = [];
+        const unmatchedVersion: Row[] = [];
         const outOfDateRows: Row[] = [];
         const minorOutOfDateRows: Row[] = [];
         const dtNotNeededRows: Row[] = [];
@@ -88,8 +88,13 @@ export class GenerateSiteCommand extends Command {
                         minorOutOfDateRows.push(row);
                     }
 
-                    if (d.status.hasTypes) {
+                    if (d.status.hasTypes === `package.json`) {
                         row[RowIndex.statusNotNeeded] = `❌`;
+                        dtNotNeededRows.push(row);
+                    }
+
+                    if (d.status.hasTypes === `file`) {
+                        row[RowIndex.statusNotNeeded] = `⚠️`;
                         dtNotNeededRows.push(row);
                     }
 
@@ -103,10 +108,10 @@ export class GenerateSiteCommand extends Command {
                     break;
                 case `missing-version`:
                     row[RowIndex.currentPackageLink] =
-                        `[${d.unescapedName}@${d.status.latest}](https://www.npmjs.com/package/${d.unescapedName}/v/${d.status.latest})`;
+                        `[${d.unescapedName}(https://www.npmjs.com/package/${d.unescapedName})`;
                     row[RowIndex.statusOutdated] = `❓`;
                     row[RowIndex.statusNotNeeded] = `❓`;
-                    missingVersion.push(row);
+                    unmatchedVersion.push(row);
                     break;
                 case `unpublished`:
                     row[RowIndex.currentPackageLink] =
@@ -131,19 +136,31 @@ export class GenerateSiteCommand extends Command {
         lines.push(``);
         lines.push(`Of the remaining ${totalCount - nonNpmCount} packages:`);
         lines.push(``);
-        lines.push(`- ${errorRows.length} had errors while fetching info.`);
-        lines.push(
-            `- ${notInRegistryRows.length} are missing from the npm registry and may need to be marked as non-npm.`,
-        );
-        lines.push(
-            `- ${unpublishedRows.length} appear to contain types for a package that has been unpublished.`,
-        );
-        lines.push(
-            `- ${missingVersion.length} appear to contain types for a version that does not match any on npm.`,
-        );
-        lines.push(`- ${dtNotNeededRows.length} appear to be typed upstream and may be removable.`);
-        lines.push(`- ${outOfDateRows.length} are out of date (major version or 0.x mismatch).`);
-        lines.push(`- ${minorOutOfDateRows.length} are out of date minorly (excluding 0.x packages).`);
+        if (errorRows.length > 0) lines.push(`- ${errorRows.length} had errors while fetching info.`);
+        if (notInRegistryRows.length > 0) {
+            lines.push(
+                `- ${notInRegistryRows.length} are missing from the npm registry and may need to be marked as non-npm.`,
+            );
+        }
+        if (unpublishedRows.length > 0) {
+            lines.push(
+                `- ${unpublishedRows.length} appear to contain types for a package that has been unpublished.`,
+            );
+        }
+        if (unmatchedVersion.length > 0) {
+            lines.push(
+                `- ${unmatchedVersion.length} appear to contain types for a version that does not match any on npm.`,
+            );
+        }
+        if (dtNotNeededRows.length > 0) {
+            lines.push(`- ${dtNotNeededRows.length} appear to be typed upstream and may be removable.`);
+        }
+        if (outOfDateRows.length > 0) {
+            lines.push(`- ${outOfDateRows.length} are out of date (major version or 0.x mismatch).`);
+        }
+        if (minorOutOfDateRows.length > 0) {
+            lines.push(`- ${minorOutOfDateRows.length} are out of date minorly (excluding 0.x packages).`);
+        }
         lines.push(``);
 
         function pushRows(rows: Row[]) {
@@ -155,6 +172,10 @@ export class GenerateSiteCommand extends Command {
         }
 
         function pushSection(title: string, rows: Row[]) {
+            if (rows.length === 0) {
+                return;
+            }
+
             lines.push(`# ${title}`);
             lines.push(``);
             lines.push(`<details><summary>Expand...</summary>`);
@@ -170,7 +191,7 @@ export class GenerateSiteCommand extends Command {
         pushSection(`Errors`, errorRows);
         pushSection(`Missing from registry`, notInRegistryRows);
         pushSection(`Unpublished`, unpublishedRows);
-        pushSection(`Missing versions`, missingVersion);
+        pushSection(`Unmatched versions`, unmatchedVersion);
         pushSection(`Potentially removable`, dtNotNeededRows);
         pushSection(`Out of date`, outOfDateRows);
         pushSection(`Out of date minorly`, minorOutOfDateRows);
