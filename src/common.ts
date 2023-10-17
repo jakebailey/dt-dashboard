@@ -38,13 +38,20 @@ export const CachedInfo = v.object({
 });
 export type CachedInfo = v.Infer<typeof CachedInfo>;
 
-export const PackageJSON = v.object({
+export const NpmManifest = v.object({
     version: v.string(),
     types: v.unknown().optional(),
     typings: v.unknown().optional(),
     exports: v.unknown().optional(),
 });
-export type PackageJSON = v.Infer<typeof PackageJSON>;
+export type NpmManifest = v.Infer<typeof NpmManifest>;
+
+export const DTPackageJson = v.object({
+    name: v.string().optional(),
+    version: v.string().optional(),
+    nonNpm: v.boolean().optional(),
+});
+export type DTPackageJson = v.Infer<typeof DTPackageJson>;
 
 export class FatalError extends Error {}
 
