@@ -108,7 +108,7 @@ export class GenerateSiteCommand extends Command {
                     break;
                 case `missing-version`:
                     row[RowIndex.currentPackageLink] =
-                        `[${d.unescapedName}(https://www.npmjs.com/package/${d.unescapedName})`;
+                        `[${d.unescapedName}](https://www.npmjs.com/package/${d.unescapedName})`;
                     row[RowIndex.statusOutdated] = `❓`;
                     row[RowIndex.statusNotNeeded] = `❓`;
                     unmatchedVersion.push(row);
