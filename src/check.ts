@@ -29,7 +29,7 @@ export class CheckCommand extends Command {
     count!: number;
     total!: number;
 
-    #fetchQueue = new PQueue({ concurrency: 20 });
+    #fetchQueues = new Map<string, PQueue>();
 
     async execute() {
         const defs = await this.#getAllDefinitions();
@@ -58,9 +58,9 @@ export class CheckCommand extends Command {
         }
     }
 
-    #updateSpinner(name: string) {
+    #updateSpinner(name: string, kind: string) {
         this.count++;
-        const message = `${this.count}/${this.total} ${name}`;
+        const message = `${this.count}/${this.total} ${name} ${kind}`;
         if (this.verbose) {
             console.log(message);
         } else {
@@ -115,7 +115,7 @@ export class CheckCommand extends Command {
         }
 
         cached = {
-            dashboardVersion: 2,
+            dashboardVersion: 3,
             fullNpmName: data.fullNpmName,
             subDirectoryPath: data.subDirectoryPath,
             typesVersion,
@@ -125,7 +125,7 @@ export class CheckCommand extends Command {
 
         const outputPath = path.join(outputDir, filename);
         await fs.promises.writeFile(outputPath, JSON.stringify(cached, undefined, 4));
-        this.#updateSpinner(data.unescapedName);
+        this.#updateSpinner(data.unescapedName, cached.status.kind);
     }
 
     async #checkPackage(data: TypingsData, cached: CachedStatus | undefined): Promise<CachedStatus> {
@@ -138,6 +138,16 @@ export class CheckCommand extends Command {
         if (header.nonNpm) {
             return { kind: `non-npm` };
         }
+
+        const regstryResult = await this.#fetch(`https://registry.npmjs.org/${data.unescapedName}`);
+        if (regstryResult.ok) {
+            const contents = await regstryResult.json() as { versions?: {}; } | undefined;
+            if (!contents?.versions || Object.keys(contents.versions).length === 0) {
+                this.#log(`${data.unescapedName} has been entirely unpublished from npm`);
+                return { kind: `unpublished` };
+            }
+        }
+        // TODO: do version resolution locally
 
         const specifier = data.isLatest ? `latest`
             : data.major === 0 ? `${data.major}.${data.minor}`
@@ -162,15 +172,6 @@ export class CheckCommand extends Command {
                     }
                     this.#log(`${data.unescapedName} did not match ${specifier} but package does exist on npm`);
                     return { kind: `missing-version`, latest: packageJSON.version };
-                }
-
-                const regstryResult = await this.#fetch(`https://registry.npmjs.org/${data.unescapedName}`);
-                if (regstryResult.ok) {
-                    const contents = await regstryResult.json() as { versions?: {}; } | undefined;
-                    if (!contents?.versions) {
-                        this.#log(`${data.unescapedName} did not match ${specifier} and is unpublished`);
-                        return { kind: `unpublished` };
-                    }
                 }
 
                 this.#log(`${data.unescapedName} not found on npm`);
@@ -256,7 +257,15 @@ export class CheckCommand extends Command {
     }
 
     #fetch(url: string) {
-        return this.#fetchQueue.add(
+        const parsed = new URL(url);
+
+        let queue = this.#fetchQueues.get(parsed.hostname);
+        if (!queue) {
+            queue = new PQueue({ concurrency: 10 });
+            this.#fetchQueues.set(parsed.hostname, queue);
+        }
+
+        return queue.add(
             async () => {
                 // const before = Date.now();
                 const response = await fetch(url, {
