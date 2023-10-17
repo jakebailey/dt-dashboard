@@ -115,7 +115,7 @@ export class CheckCommand extends Command {
         }
 
         cached = {
-            dashboardVersion: 3,
+            dashboardVersion: 4,
             fullNpmName: data.fullNpmName,
             subDirectoryPath: data.subDirectoryPath,
             typesVersion,
