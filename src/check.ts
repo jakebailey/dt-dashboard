@@ -115,7 +115,7 @@ export class CheckCommand extends Command {
         }
 
         cached = {
-            dashboardVersion: 4,
+            dashboardVersion: 5,
             fullNpmName: data.fullNpmName,
             subDirectoryPath: data.subDirectoryPath,
             typesVersion,
@@ -156,13 +156,10 @@ export class CheckCommand extends Command {
             : data.major === 0 ? `${data.major}.${data.minor}`
             : `${data.major}`;
 
-        const url = `https://cdn.jsdelivr.net/npm/${data.unescapedName}@${specifier}/package.json`;
-        const result = await this.#fetch(url);
+        const result = await this.#tryGetPackageJSON(data.unescapedName, specifier);
         if (!result.ok) {
             if (result.status === 404) {
-                const result = await this.#fetch(
-                    `https://cdn.jsdelivr.net/npm/${data.unescapedName}@latest/package.json`,
-                );
+                const result = await this.#tryGetPackageJSON(data.unescapedName, `latest`);
                 if (result.ok) {
                     const contents = await result.json();
                     let packageJSON: PackageJSON;
@@ -224,20 +221,12 @@ export class CheckCommand extends Command {
             this.#log(`${data.unescapedName} has types (package.json)`);
             hasTypes = true;
         } else {
-            const url =
-                `https://data.jsdelivr.com/v1/packages/npm/${data.unescapedName}@${currentVersionString}?structure=tree`;
-            let result = await this.#fetch(url);
+            const result = await this.#tryGetPackageMetadata(data.unescapedName, currentVersionString);
             if (!result.ok) {
-                // Sometimes the info is too big for jsdelivr to handle, so we try unpkg instead.
-                // Their APIs return similar enough results to be compatible.
-                const url = `https://unpkg.com/${data.unescapedName}@${currentVersionString}/?meta`;
-                result = await this.#fetch(url);
-                if (!result.ok) {
-                    const message =
-                        `${data.unescapedName} failed to fetch jsdelivr metadata: ${result.status} ${result.statusText}`;
-                    this.#log(`${data.unescapedName} ${message}`);
-                    return { kind: `error`, message };
-                }
+                const message =
+                    `${data.unescapedName} failed to fetch jsdelivr metadata: ${result.status} ${result.statusText}`;
+                this.#log(`${data.unescapedName} ${message}`);
+                return { kind: `error`, message };
             }
             const contents = await result.json();
             const metadata = Metadata.parse(contents, { mode: `passthrough` });
@@ -266,6 +255,29 @@ export class CheckCommand extends Command {
             outOfDate,
             hasTypes,
         };
+    }
+
+    async #tryGetPackageJSON(name: string, specifier: string) {
+        const url = `https://cdn.jsdelivr.net/npm/${name}@${specifier}/package.json`;
+        let result = await this.#fetch(url);
+        if (!result.ok && result.status !== 404) {
+            // try unpkg
+            const url = `https://unpkg.com/${name}@${specifier}/package.json`;
+            result = await this.#fetch(url);
+        }
+        return result;
+    }
+
+    async #tryGetPackageMetadata(name: string, specifier: string) {
+        const url = `https://data.jsdelivr.com/v1/packages/npm/${name}@${specifier}?structure=tree`;
+        let result = await this.#fetch(url);
+        if (!result.ok) {
+            // Sometimes the info is too big for jsdelivr to handle, so we try unpkg instead.
+            // Their APIs return similar enough results to be compatible.
+            const url = `https://unpkg.com/${name}@${specifier}/?meta`;
+            result = await this.#fetch(url);
+        }
+        return result;
     }
 
     #fetch(url: string) {
