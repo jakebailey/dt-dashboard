@@ -64,7 +64,8 @@ export class GenerateSiteCommand extends Command {
 
             switch (d.status.kind) {
                 case `error`:
-                    row[RowIndex.currentPackageLink] = `❓`;
+                    row[RowIndex.currentPackageLink] =
+                        `[${d.unescapedName}](https://www.npmjs.com/package/${d.unescapedName})`;
                     row[RowIndex.statusOutdated] = `❓`;
                     row[RowIndex.statusNotNeeded] = `❓`;
                     errorRows.push(row);
