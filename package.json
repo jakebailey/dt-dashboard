@@ -30,6 +30,7 @@
         "clipanion": "4.0.0-rc.2",
         "glob": "^10.3.10",
         "make-fetch-happen": "^13.0.0",
+        "npm-high-impact": "^1.4.0",
         "ora": "^7.0.1",
         "p-queue": "^7.4.1",
         "pacote": "^17.0.4",

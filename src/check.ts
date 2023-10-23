@@ -48,7 +48,11 @@ export class CheckCommand extends Command {
         this.definitelyTypedPath = path.resolve(this.definitelyTypedPath);
 
         console.log(`loading DT`);
-        const allPackageJsons = await glob(`types/**/package.json`, { cwd: this.definitelyTypedPath });
+        const allPackageJsons = await glob(`types/**/package.json`, {
+            cwd: this.definitelyTypedPath,
+            ignore: `**/node_modules/**`,
+            follow: false,
+        });
 
         const allTypingsData: TypingsData[] = [];
 

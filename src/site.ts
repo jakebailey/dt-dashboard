@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import path from "node:path";
 
 import { Command, Option } from "clipanion";
+import { npmHighImpact } from "npm-high-impact";
 
 import { CachedInfo } from "./common.js";
 
@@ -16,6 +17,8 @@ export class GenerateSiteCommand extends Command {
     verbose = Option.Boolean(`--verbose`, false);
 
     override async execute(): Promise<number | void> {
+        const highImpact = new Set(npmHighImpact);
+
         const data: CachedInfo[] = [];
 
         for (const file of iterateFiles(this.input)) {
@@ -125,6 +128,14 @@ export class GenerateSiteCommand extends Command {
                     continue;
                 default:
                     // d.status.kind satisfies never;
+            }
+
+            if (highImpact.has(d.fullNpmName)) {
+                row[RowIndex.typesPackageLink] = `🔥 ${row[RowIndex.typesPackageLink]}`;
+            }
+
+            if (highImpact.has(d.unescapedName) && row[RowIndex.currentPackageLink] !== `❓`) {
+                row[RowIndex.currentPackageLink] = `🔥 ${row[RowIndex.currentPackageLink]}`;
             }
         }
 
