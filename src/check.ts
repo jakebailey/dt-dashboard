@@ -5,9 +5,11 @@ import path from "node:path";
 import { Command, Option } from "clipanion";
 import { glob } from "glob";
 import fetch from "make-fetch-happen";
+import { Minimatch } from "minimatch";
 import ora from "ora";
 import PQueue from "p-queue";
 import pacote from "pacote";
+import prettyMilliseconds from "pretty-ms";
 import { SemVer } from "semver";
 
 import {
@@ -20,7 +22,7 @@ import {
     NpmManifest,
 } from "./common.js";
 
-const dtsRegExp = /\.d\.[cm]?ts$/;
+const dtsMatcher = new Minimatch(`**/*.d.{ts,cts,mts,*.ts}`, { optimizationLevel: 2 });
 
 interface TypingsData {
     unescapedName: string;
@@ -45,6 +47,8 @@ export class CheckCommand extends Command {
     total!: number;
 
     async execute() {
+        let start = Date.now();
+
         this.definitelyTypedPath = path.resolve(this.definitelyTypedPath);
 
         console.log(`loading DT`);
@@ -55,18 +59,17 @@ export class CheckCommand extends Command {
         });
 
         const allTypingsData: TypingsData[] = [];
-
-        // TODO: parallel
-        for (const packageJsonPath of allPackageJsons) {
+        await Promise.all(allPackageJsons.map(async (packageJsonPath) => {
             const typingsData = await this.#getTypingsData(packageJsonPath);
             if (typingsData) {
                 allTypingsData.push(typingsData);
             }
-        }
+        }));
 
         allTypingsData.sort((a, b) => compareComparableValues(a.subDirectoryPath, b.subDirectoryPath));
 
-        console.log(`done loading DT`);
+        console.log(`done loading DT (${prettyMilliseconds(Date.now() - start)})`);
+        start = Date.now();
 
         this.count = 0;
         this.total = allTypingsData.length;
@@ -79,6 +82,8 @@ export class CheckCommand extends Command {
         if (!this.verbose) {
             this.spinner.stop();
         }
+
+        console.log(`done in ${prettyMilliseconds(Date.now() - start)}`);
     }
 
     #updateSpinner(name: string, kind: string) {
@@ -260,7 +265,8 @@ export class CheckCommand extends Command {
                         // I can't believe you've done this.
                         return false;
                     }
-                    if (dtsRegExp.test(filename)) {
+                    // eslint-disable-next-line unicorn/prefer-regexp-test
+                    if (dtsMatcher.match(filename)) {
                         this.#log(`${data.unescapedName} has types (found ${filename}))`);
                         return true;
                     }
