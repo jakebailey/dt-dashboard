@@ -318,9 +318,10 @@ export class CheckCommand extends Command {
     }
 
     #pacoteQueue = new PQueue({ concurrency: 20 });
+    #packumentCache = new Map<string, pacote.Packument>();
     async #getManifest(name: string, specifier: string, fullMetadata: boolean) {
         const result = await this.#pacoteQueue.add(
-            () => pacote.manifest(`${name}@${specifier}`, { fullMetadata }),
+            () => pacote.manifest(`${name}@${specifier}`, { fullMetadata, packumentCache: this.#packumentCache }),
             { throwOnTimeout: true },
         );
         return NpmManifest.parse(result, { mode: `passthrough` });
