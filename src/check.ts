@@ -17,7 +17,7 @@ import {
     CachedStatus,
     DTPackageJson,
     FatalError,
-    findInMetadata,
+    forEachFileInMetadata,
     Metadata,
     NpmManifest,
 } from "./common.js";
@@ -230,7 +230,7 @@ export class CheckCommand extends Command {
         const currentVersionString = currentVersion.format();
 
         let outOfDate: `major` | `minor` | undefined;
-        let hasTypes: "package.json" | "file" | undefined;
+        let hasTypes: "package.json" | "entrypoint" | "other" | undefined;
 
         if (data.isLatest) {
             if (currentVersion.major > data.major) {
@@ -253,28 +253,59 @@ export class CheckCommand extends Command {
         } else {
             const { response, metadata } = await this.#tryGetPackageMetadata(data.unescapedName, currentVersionString);
             if (response) {
-                const message =
-                    `${data.unescapedName} failed to fetch jsdelivr metadata: ${response.status} ${response.statusText}`;
+                const message = `failed to fetch metadata: ${response.status} ${response.statusText}`;
                 this.#log(`${data.unescapedName} ${message}`);
                 return { kind: `error`, message };
             }
 
-            if (
-                findInMetadata(metadata, (filename) => {
-                    if (filename.includes(`/node_modules/`)) {
-                        // I can't believe you've done this.
-                        return false;
-                    }
-                    // eslint-disable-next-line unicorn/prefer-regexp-test
-                    if (dtsMatcher.match(filename)) {
-                        this.#log(`${data.unescapedName} has types (found ${filename}))`);
-                        return true;
-                    }
+            const candidates = new Set<string>();
+            function addCandidateFromJs(candidate: string) {
+                for (const c of filenameToPossibleDeclarations(candidate)) {
+                    candidates.add(c);
+                }
+            }
 
-                    return false;
-                })
-            ) {
-                hasTypes = `file`;
+            if (packageJSON.exports) {
+                function walkObject(exports: unknown) {
+                    if (!exports) return;
+                    if (typeof exports === `string`) {
+                        addCandidateFromJs(exports);
+                    } else if (typeof exports === `object`) {
+                        for (const value of Object.values(exports)) {
+                            walkObject(value);
+                        }
+                    }
+                }
+                walkObject(packageJSON.exports);
+            } else {
+                candidates.add(`/index.d.ts`);
+                if (typeof packageJSON.main === `string`) {
+                    addCandidateFromJs(packageJSON.main);
+                }
+            }
+
+            let foundEntrypoint;
+            let foundOther;
+            forEachFileInMetadata(metadata, (filename) => {
+                if (filename.includes(`/node_modules/`)) {
+                    // I can't believe you've done this.
+                    return;
+                }
+                // eslint-disable-next-line unicorn/prefer-regexp-test
+                if (dtsMatcher.match(filename)) {
+                    foundOther = filename;
+                }
+                if (candidates.has(filename)) {
+                    foundEntrypoint = filename;
+                }
+            });
+
+            if (foundEntrypoint) {
+                this.#log(`${data.unescapedName} has types (found ${foundEntrypoint} as entrypoint))`);
+                hasTypes = `entrypoint`;
+            } else if (foundOther) {
+                this.#log(`${data.unescapedName} has types (found ${foundOther} as other file))`);
+                hasTypes = `other`;
             }
         }
 
@@ -358,6 +389,20 @@ function packageJSONIsTyped(p: NpmManifest): boolean {
         || !!p.typings
         || (!!p.exports && typeof p.exports === `object`
             && Object.values(p.exports).some((value) => typeof value !== `string` && value.types));
+}
+
+const declarationMappings = new Map([
+    [`.cjs`, `.d.cts`],
+    [`.mjs`, `.d.mts`],
+    [`.js`, `.d.ts`],
+]);
+
+function filenameToPossibleDeclarations(filename: string): string[] {
+    const ext = path.extname(filename);
+    const staticMapping = declarationMappings.get(ext);
+    const arr = staticMapping ? [filename.slice(0, -ext.length) + staticMapping]
+        : [`${filename}.d.ts`, `${filename}/index.d.ts`];
+    return arr.map((p) => path.posix.resolve(`/`, p));
 }
 
 // Based on `getPackageNameFromAtTypesDirectory` in TypeScript.

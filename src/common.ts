@@ -7,7 +7,7 @@ export const CachedStatus = v.union(
         kind: v.literal(`found`),
         current: v.string(),
         outOfDate: v.union(v.literal(`major`), v.literal(`minor`)).optional(),
-        hasTypes: v.union(v.literal(`package.json`), v.literal(`file`)).optional(),
+        hasTypes: v.union(v.literal(`package.json`), v.literal(`entrypoint`), v.literal(`other`)).optional(),
     }),
     v.object({
         kind: v.literal(`not-in-registry`),
@@ -40,6 +40,7 @@ export type CachedInfo = v.Infer<typeof CachedInfo>;
 
 export const NpmManifest = v.object({
     version: v.string(),
+    main: v.unknown().optional(),
     types: v.unknown().optional(),
     typings: v.unknown().optional(),
     exports: v.unknown().optional(),
@@ -80,16 +81,12 @@ export const Metadata = v.object({
 });
 export type Metadata = v.Infer<typeof Metadata>;
 
-export function findInMetadata(metadata: Metadata, fn: (filename: string) => boolean): boolean {
+export function forEachFileInMetadata(metadata: Metadata, fn: (filename: string) => void): void {
     if (metadata.files) {
         for (const filename of iterate(`/`, metadata.files)) {
-            const result = fn(filename);
-            if (result) {
-                return true;
-            }
+            fn(filename);
         }
     }
-    return false;
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
     function* iterate(parent: string, files: (MetadataFile | MetadataDirectory)[]): Generator<string> {

@@ -96,8 +96,13 @@ export class GenerateSiteCommand extends Command {
                         dtNotNeededRows.push(row);
                     }
 
-                    if (d.status.hasTypes === `file`) {
+                    if (d.status.hasTypes === `entrypoint`) {
                         row[RowIndex.statusNotNeeded] = `⚠️`;
+                        dtNotNeededRows.push(row);
+                    }
+
+                    if (d.status.hasTypes === `other`) {
+                        row[RowIndex.statusNotNeeded] = `🤨`;
                         dtNotNeededRows.push(row);
                     }
 
