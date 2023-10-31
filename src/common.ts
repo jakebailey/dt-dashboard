@@ -6,7 +6,7 @@ export const CachedStatus = v.union(
     v.object({
         kind: v.literal(`found`),
         current: v.string(),
-        outOfDate: v.union(v.literal(`major`), v.literal(`minor`)).optional(),
+        outOfDate: v.union(v.literal(`major`), v.literal(`minor`), v.literal(`too-new`)).optional(),
         hasTypes: v.union(v.literal(`package.json`), v.literal(`entrypoint`), v.literal(`other`)).optional(),
     }),
     v.object({
@@ -29,7 +29,7 @@ export const CachedStatus = v.union(
 export type CachedStatus = v.Infer<typeof CachedStatus>;
 
 export const CachedInfo = v.object({
-    dashboardVersion: v.literal(6),
+    dashboardVersion: v.literal(7),
     fullNpmName: v.string(),
     subDirectoryPath: v.string(),
     typesVersion: v.string(),

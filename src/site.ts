@@ -49,7 +49,7 @@ export class GenerateSiteCommand extends Command {
         const errorRows: Row[] = [];
         const notInRegistryRows: Row[] = [];
         const unpublishedRows: Row[] = [];
-        const unmatchedVersion: Row[] = [];
+        const unmatchedVersionRows: Row[] = [];
         const outOfDateRows: Row[] = [];
         const minorOutOfDateRows: Row[] = [];
         const dtNotNeededRows: Row[] = [];
@@ -80,6 +80,11 @@ export class GenerateSiteCommand extends Command {
                     }
                     row[RowIndex.currentPackageLink] =
                         `[${d.unescapedName}@${d.status.current}](https://www.npmjs.com/package/${d.unescapedName}/v/${d.status.current})`;
+
+                    if (d.status.outOfDate === `too-new`) {
+                        row[RowIndex.statusOutdated] = `🤨`;
+                        unmatchedVersionRows.push(row);
+                    }
 
                     if (d.status.outOfDate === `major`) {
                         row[RowIndex.statusOutdated] = `❌`;
@@ -119,7 +124,7 @@ export class GenerateSiteCommand extends Command {
                         `[${d.unescapedName}](https://www.npmjs.com/package/${d.unescapedName})`;
                     row[RowIndex.statusOutdated] = `❓`;
                     row[RowIndex.statusNotNeeded] = `❓`;
-                    unmatchedVersion.push(row);
+                    unmatchedVersionRows.push(row);
                     break;
                 case `unpublished`:
                     row[RowIndex.currentPackageLink] =
@@ -163,9 +168,9 @@ export class GenerateSiteCommand extends Command {
                 `- ${unpublishedRows.length} appear to contain types for a package that has been unpublished.`,
             );
         }
-        if (unmatchedVersion.length > 0) {
+        if (unmatchedVersionRows.length > 0) {
             lines.push(
-                `- ${unmatchedVersion.length} appear to contain types for a version that does not match any on npm.`,
+                `- ${unmatchedVersionRows.length} appear to contain types for a version that does not match any on npm.`,
             );
         }
         if (dtNotNeededRows.length > 0) {
@@ -207,7 +212,7 @@ export class GenerateSiteCommand extends Command {
         pushSection(`Errors`, errorRows);
         pushSection(`Missing from registry`, notInRegistryRows);
         pushSection(`Unpublished`, unpublishedRows);
-        pushSection(`Unmatched versions`, unmatchedVersion);
+        pushSection(`Unmatched versions`, unmatchedVersionRows);
         pushSection(`Potentially removable`, dtNotNeededRows);
         pushSection(`Out of date`, outOfDateRows);
         pushSection(`Out of date minorly`, minorOutOfDateRows);

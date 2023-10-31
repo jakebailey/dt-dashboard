@@ -168,7 +168,7 @@ export class CheckCommand extends Command {
         }
 
         cached = {
-            dashboardVersion: 6,
+            dashboardVersion: 7,
             fullNpmName: data.fullNpmName,
             subDirectoryPath: data.subDirectoryPath,
             typesVersion,
@@ -229,11 +229,17 @@ export class CheckCommand extends Command {
         const currentVersion = new SemVer(packageJSON.version, { loose: true });
         const currentVersionString = currentVersion.format();
 
-        let outOfDate: `major` | `minor` | undefined;
+        let outOfDate: `major` | `minor` | `too-new` | undefined;
         let hasTypes: "package.json" | "entrypoint" | "other" | undefined;
 
         if (data.isLatest) {
-            if (currentVersion.major > data.major) {
+            if (
+                currentVersion.major < data.major
+                || (currentVersion.major === data.major && currentVersion.minor < data.minor)
+            ) {
+                this.#log(`${data.unescapedName} is too new`);
+                outOfDate = `too-new`;
+            } else if (currentVersion.major > data.major) {
                 this.#log(`${data.unescapedName} is out of date`);
                 outOfDate = `major`;
             } else if (currentVersion.minor > data.minor) {
