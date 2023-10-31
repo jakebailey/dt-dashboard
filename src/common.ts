@@ -28,8 +28,10 @@ export const CachedStatus = v.union(
 );
 export type CachedStatus = v.Infer<typeof CachedStatus>;
 
+export const dashboardVersion = 8 as const;
+
 export const CachedInfo = v.object({
-    dashboardVersion: v.literal(7),
+    dashboardVersion: v.literal(dashboardVersion),
     fullNpmName: v.string(),
     subDirectoryPath: v.string(),
     typesVersion: v.string(),

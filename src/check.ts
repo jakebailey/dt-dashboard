@@ -10,11 +10,12 @@ import ora from "ora";
 import PQueue from "p-queue";
 import pacote from "pacote";
 import prettyMilliseconds from "pretty-ms";
-import { SemVer } from "semver";
+import * as semver from "semver";
 
 import {
     CachedInfo,
     CachedStatus,
+    dashboardVersion,
     DTPackageJson,
     FatalError,
     forEachFileInMetadata,
@@ -117,7 +118,7 @@ export class CheckCommand extends Command {
         );
 
         assert(packageJson.version);
-        const version = new SemVer(packageJson.version);
+        const version = new semver.SemVer(packageJson.version);
 
         const typesNameWithoutPrefix = removeTypesPrefix(packageJson.name);
         const unescapedName = unmangleScopedPackage(typesNameWithoutPrefix) ?? typesNameWithoutPrefix;
@@ -168,7 +169,7 @@ export class CheckCommand extends Command {
         }
 
         cached = {
-            dashboardVersion: 7,
+            dashboardVersion,
             fullNpmName: data.fullNpmName,
             subDirectoryPath: data.subDirectoryPath,
             typesVersion,
@@ -188,13 +189,14 @@ export class CheckCommand extends Command {
             return { kind: `non-npm` };
         }
 
-        const specifier = data.isLatest ? `latest`
-            : data.major === 0 ? `${data.major}.${data.minor}`
+        const specifier = data.major === 0 ? `${data.major}.${data.minor}`
             : `${data.major}`;
+
+        const specifierOrLatest = data.isLatest ? `latest` : specifier;
 
         let fullManifest;
         try {
-            fullManifest = await this.#getManifest(data.unescapedName, specifier, true);
+            fullManifest = await this.#getManifest(data.unescapedName, specifierOrLatest, true);
         } catch (_e) {
             const e = _e as { code?: string; versions?: string[]; };
 
@@ -208,7 +210,7 @@ export class CheckCommand extends Command {
                     this.#log(`${data.unescapedName} has no versions`);
                     return { kind: `unpublished` };
                 }
-                this.#log(`${data.unescapedName} did not match ${specifier} but package does exist on npm`);
+                this.#log(`${data.unescapedName} did not match ${specifierOrLatest} but package does exist on npm`);
                 return { kind: `missing-version` };
             }
 
@@ -217,17 +219,42 @@ export class CheckCommand extends Command {
             return { kind: `error`, message };
         }
 
-        const packageJSON = fullManifest;
+        let currentVersion = new semver.SemVer(fullManifest.version, { loose: true });
+        let currentVersionString = currentVersion.format();
 
-        if (cached?.kind === `found` && packageJSON.version === cached.current) {
-            return cached;
+        if (
+            specifierOrLatest === `latest`
+            && (currentVersion.major < data.major
+                || (currentVersion.major === data.major && currentVersion.minor < data.minor))
+        ) {
+            // We were looking for the latest, but found something older than the types package.
+            // This can mean that the types package really is too new, that the types are for a prerelease
+            // version, or that the latest tag doesn't actually point to the newest version.
+            // TODO: perhaps we should just always ask for the packument.
+            try {
+                const packument = await this.#getPackument(data.unescapedName);
+                const versions = Object.keys(packument.versions).filter((version) =>
+                    semver.satisfies(version, `^${specifier}`, { loose: true, includePrerelease: true })
+                );
+                versions.sort((a, b) => semver.compare(b, a));
+                const latest = versions[0];
+                if (latest) {
+                    // const old = currentVersionString;
+                    fullManifest = await this.#getManifest(data.unescapedName, latest, true);
+                    currentVersion = new semver.SemVer(fullManifest.version, { loose: true });
+                    currentVersionString = currentVersion.format();
+                    // if (currentVersionString !== old) {
+                    //     this.#log(`${data.unescapedName} ${old} is too new, using ${currentVersionString}`);
+                    // }
+                }
+            } catch {
+                // ignore
+            }
         }
 
-        // TODO: some packages publish with the version string entirely wrong within package.json,
-        // so we can't use this method to resolve versions all of the time.
-        // Again, need to use the registry instead.
-        const currentVersion = new SemVer(packageJSON.version, { loose: true });
-        const currentVersionString = currentVersion.format();
+        if (cached?.kind === `found` && fullManifest.version === cached.current) {
+            return cached;
+        }
 
         let outOfDate: `major` | `minor` | `too-new` | undefined;
         let hasTypes: "package.json" | "entrypoint" | "other" | undefined;
@@ -253,7 +280,7 @@ export class CheckCommand extends Command {
             }
         }
 
-        if (packageJSONIsTyped(packageJSON)) {
+        if (packageJSONIsTyped(fullManifest)) {
             this.#log(`${data.unescapedName} has types (package.json)`);
             hasTypes = `package.json`;
         } else {
@@ -271,7 +298,7 @@ export class CheckCommand extends Command {
                 }
             }
 
-            if (packageJSON.exports) {
+            if (fullManifest.exports) {
                 function walkObject(exports: unknown) {
                     if (!exports) return;
                     if (typeof exports === `string`) {
@@ -282,11 +309,11 @@ export class CheckCommand extends Command {
                         }
                     }
                 }
-                walkObject(packageJSON.exports);
+                walkObject(fullManifest.exports);
             } else {
                 candidates.add(`/index.d.ts`);
-                if (typeof packageJSON.main === `string`) {
-                    addCandidateFromJs(packageJSON.main);
+                if (typeof fullManifest.main === `string`) {
+                    addCandidateFromJs(fullManifest.main);
                 }
             }
 
@@ -331,6 +358,14 @@ export class CheckCommand extends Command {
             { throwOnTimeout: true },
         );
         return NpmManifest.parse(result, { mode: `passthrough` });
+    }
+
+    async #getPackument(name: string) {
+        const result = await this.#pacoteQueue.add(
+            () => pacote.packument(name, { packumentCache: this.#packumentCache }),
+            { throwOnTimeout: true },
+        );
+        return result;
     }
 
     async #tryGetPackageMetadata(name: string, specifier: string) {
