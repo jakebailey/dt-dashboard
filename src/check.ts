@@ -33,6 +33,7 @@ interface TypingsData {
     minor: number;
     nonNpm: boolean | undefined;
     isLatest: boolean;
+    packageJsonType: string | undefined;
 }
 
 export class CheckCommand extends Command {
@@ -133,6 +134,7 @@ export class CheckCommand extends Command {
             minor: version.minor,
             nonNpm: packageJson.nonNpm,
             isLatest,
+            packageJsonType: packageJson.type,
         };
     }
 
@@ -347,6 +349,7 @@ export class CheckCommand extends Command {
             current: currentVersionString,
             outOfDate,
             hasTypes,
+            packageJsonTypeMatches: (data.packageJsonType ?? `commonjs`) === (fullManifest.type ?? `commonjs`),
         };
     }
 

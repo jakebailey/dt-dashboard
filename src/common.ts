@@ -8,6 +8,7 @@ export const CachedStatus = v.union(
         current: v.string(),
         outOfDate: v.union(v.literal(`major`), v.literal(`minor`), v.literal(`too-new`)).optional(),
         hasTypes: v.union(v.literal(`package.json`), v.literal(`entrypoint`), v.literal(`other`)).optional(),
+        packageJsonTypeMatches: v.boolean(),
     }),
     v.object({
         kind: v.literal(`not-in-registry`),
@@ -46,6 +47,7 @@ export const NpmManifest = v.object({
     types: v.unknown().optional(),
     typings: v.unknown().optional(),
     exports: v.unknown().optional(),
+    type: v.string().optional(),
 });
 export type NpmManifest = v.Infer<typeof NpmManifest>;
 
@@ -53,6 +55,7 @@ export const DTPackageJson = v.object({
     name: v.string().optional(),
     version: v.string().optional(),
     nonNpm: v.boolean().optional(),
+    type: v.string().optional(),
 });
 export type DTPackageJson = v.Infer<typeof DTPackageJson>;
 
