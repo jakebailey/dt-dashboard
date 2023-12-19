@@ -464,9 +464,11 @@ function removeTypesPrefix(name: string) {
     return name.startsWith(typesPrefix) ? name.slice(typesPrefix.length) : name;
 }
 
-function exportsSimilar(a: unknown, b: unknown): boolean {
+function exportsSimilar(a: {} | undefined | null, b: {} | undefined | null): boolean {
+    a ??= undefined;
+    b ??= undefined;
     if (typeof a !== typeof b) return false;
-    if (typeof a !== "object") return true;
+    if (typeof a !== `object` || typeof b !== `object`) return true;
     if (Array.isArray(a) || Array.isArray(b)) return true;
 
     const aKeys = Object.keys(a);
@@ -474,8 +476,8 @@ function exportsSimilar(a: unknown, b: unknown): boolean {
     if (aKeys.length !== bKeys.length) return false;
     aKeys.sort();
     bKeys.sort();
-    for (let i = 0; i < aKeys.length; i++) {
-        if (aKeys[i] !== bKeys[i]) return false;
+    for (const [i, aKey] of aKeys.entries()) {
+        if (aKey !== bKeys[i]) return false;
     }
 
     return true;
