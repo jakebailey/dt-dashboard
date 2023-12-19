@@ -9,6 +9,7 @@ export const CachedStatus = v.union(
         outOfDate: v.union(v.literal(`major`), v.literal(`minor`), v.literal(`too-new`)).optional(),
         hasTypes: v.union(v.literal(`package.json`), v.literal(`entrypoint`), v.literal(`other`)).optional(),
         packageJsonTypeMatches: v.boolean(),
+        exportsSimilar: v.boolean(),
     }),
     v.object({
         kind: v.literal(`not-in-registry`),
@@ -56,6 +57,7 @@ export const DTPackageJson = v.object({
     version: v.string().optional(),
     nonNpm: v.boolean().optional(),
     type: v.string().optional(),
+    exports: v.unknown().optional(),
 });
 export type DTPackageJson = v.Infer<typeof DTPackageJson>;
 

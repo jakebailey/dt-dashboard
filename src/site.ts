@@ -39,6 +39,7 @@ export class GenerateSiteCommand extends Command {
             statusOutdated: string,
             statusNotNeeded: string,
             packageJsonTypeMatches: string,
+            packageJsonExportsMismatch: string,
         ];
         const RowIndex = {
             typesPackageLink: 0,
@@ -46,6 +47,7 @@ export class GenerateSiteCommand extends Command {
             statusOutdated: 2,
             statusNotNeeded: 3,
             packageJsonTypeMatches: 4,
+            packageJsonExportsMismatch: 5,
         };
 
         const errorRows: Row[] = [];
@@ -56,6 +58,7 @@ export class GenerateSiteCommand extends Command {
         const minorOutOfDateRows: Row[] = [];
         const dtNotNeededRows: Row[] = [];
         const packageJsonTypeMismatchRows: Row[] = [];
+        const packageJsonExportsMismatchRows: Row[] = [];
 
         const totalCount = data.length;
         let nonNpmCount = 0;
@@ -64,6 +67,7 @@ export class GenerateSiteCommand extends Command {
             const row: Row = [
                 `[${d.fullNpmName}@${d.typesVersion}](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/${d.subDirectoryPath})`,
                 `❓`,
+                `✅`,
                 `✅`,
                 `✅`,
                 `✅`,
@@ -118,6 +122,11 @@ export class GenerateSiteCommand extends Command {
                     if (!d.status.packageJsonTypeMatches) {
                         row[RowIndex.packageJsonTypeMatches] = `❌`;
                         packageJsonTypeMismatchRows.push(row);
+                    }
+
+                    if (!d.status.exportsSimilar) {
+                        row[RowIndex.packageJsonExportsMismatch] = `❌`;
+                        packageJsonExportsMismatchRows.push(row);
                     }
 
                     break;
@@ -194,11 +203,14 @@ export class GenerateSiteCommand extends Command {
         if (packageJsonTypeMismatchRows.length > 0) {
             lines.push(`- ${packageJsonTypeMismatchRows.length} have a \`package.json\` type mismatch.`);
         }
+        if (packageJsonExportsMismatchRows.length > 0) {
+            lines.push(`- ${packageJsonExportsMismatchRows.length} have a \`package.json\` exports mismatch.`);
+        }
         lines.push(``);
 
         function pushRows(rows: Row[]) {
-            lines.push(`| Types | Current | Outdated? | DT Needed? | \`type=\` OK? |`);
-            lines.push(`| --- | --- | --- | --- | --- |`);
+            lines.push(`| Types | Current | Outdated? | DT Needed? | \`type=\` OK? | \`exports\` OK? |`);
+            lines.push(`| --- | --- | --- | --- | --- | --- |`);
             for (const row of rows) {
                 lines.push(`| ${row.join(` | `)} |`);
             }
@@ -229,6 +241,7 @@ export class GenerateSiteCommand extends Command {
         pushSection(`Out of date`, outOfDateRows);
         pushSection(`Out of date minorly`, minorOutOfDateRows);
         pushSection(`\`package.json\` type mismatch`, packageJsonTypeMismatchRows);
+        pushSection(`\`package.json\` exports mismatch`, packageJsonExportsMismatchRows);
 
         await fs.promises.mkdir(this.output, { recursive: true });
         await fs.promises.writeFile(path.join(this.output, `README.md`), lines.join(`\n`));

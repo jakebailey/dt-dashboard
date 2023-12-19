@@ -34,6 +34,7 @@ interface TypingsData {
     nonNpm: boolean | undefined;
     isLatest: boolean;
     packageJsonType: string | undefined;
+    exports: unknown;
 }
 
 export class CheckCommand extends Command {
@@ -135,6 +136,7 @@ export class CheckCommand extends Command {
             nonNpm: packageJson.nonNpm,
             isLatest,
             packageJsonType: packageJson.type,
+            exports: packageJson.exports,
         };
     }
 
@@ -196,7 +198,7 @@ export class CheckCommand extends Command {
 
         const specifierOrLatest = data.isLatest ? `latest` : specifier;
 
-        let fullManifest;
+        let fullManifest: NpmManifest;
         try {
             fullManifest = await this.#getManifest(data.unescapedName, specifierOrLatest, true);
         } catch (_e) {
@@ -350,6 +352,7 @@ export class CheckCommand extends Command {
             outOfDate,
             hasTypes,
             packageJsonTypeMatches: (data.packageJsonType ?? `commonjs`) === (fullManifest.type ?? `commonjs`),
+            exportsSimilar: exportsSimilar(data.exports, fullManifest.exports),
         };
     }
 
@@ -459,4 +462,21 @@ function unmangleScopedPackage(packageName: string): string | undefined {
 const typesPrefix = `@types/`;
 function removeTypesPrefix(name: string) {
     return name.startsWith(typesPrefix) ? name.slice(typesPrefix.length) : name;
+}
+
+function exportsSimilar(a: unknown, b: unknown): boolean {
+    if (typeof a !== typeof b) return false;
+    if (typeof a !== "object") return true;
+    if (Array.isArray(a) || Array.isArray(b)) return true;
+
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    if (aKeys.length !== bKeys.length) return false;
+    aKeys.sort();
+    bKeys.sort();
+    for (let i = 0; i < aKeys.length; i++) {
+        if (aKeys[i] !== bKeys[i]) return false;
+    }
+
+    return true;
 }
