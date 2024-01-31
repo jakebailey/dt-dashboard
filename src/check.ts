@@ -31,7 +31,7 @@ interface TypingsData {
     subDirectoryPath: string;
     major: number;
     minor: number;
-    nonNpm: boolean | undefined;
+    nonNpm: boolean | "conflict" | undefined;
     isLatest: boolean;
     packageJsonType: string | undefined;
     exports: unknown;
@@ -190,7 +190,7 @@ export class CheckCommand extends Command {
         // this.#log(`checking ${data.fullNpmName} ${data.unescapedName} ${data.major}.${data.minor}`);
 
         if (data.nonNpm) {
-            return { kind: `non-npm` };
+            return { kind: data.nonNpm === `conflict` ? `conflict` : `non-npm` };
         }
 
         const specifier = data.major === 0 ? `${data.major}.${data.minor}`

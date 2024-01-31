@@ -24,6 +24,9 @@ export const CachedStatus = v.union(
         kind: v.literal(`non-npm`),
     }),
     v.object({
+        kind: v.literal(`conflict`),
+    }),
+    v.object({
         kind: v.literal(`error`),
         message: v.string(),
     }),
@@ -55,7 +58,7 @@ export type NpmManifest = v.Infer<typeof NpmManifest>;
 export const DTPackageJson = v.object({
     name: v.string().optional(),
     version: v.string().optional(),
-    nonNpm: v.boolean().optional(),
+    nonNpm: v.union(v.boolean(), v.literal("conflict")).optional(),
     type: v.string().optional(),
     exports: v.unknown().optional(),
 });

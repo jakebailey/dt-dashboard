@@ -62,6 +62,7 @@ export class GenerateSiteCommand extends Command {
 
         const totalCount = data.length;
         let nonNpmCount = 0;
+        let conflictCount = 0;
 
         for (const d of data) {
             const row: Row = [
@@ -154,6 +155,9 @@ export class GenerateSiteCommand extends Command {
                 case `non-npm`:
                     nonNpmCount++;
                     continue;
+                    case `conflict`:
+                        conflictCount++;
+                        continue;
                 default:
                     // d.status.kind satisfies never;
             }
@@ -171,9 +175,9 @@ export class GenerateSiteCommand extends Command {
 
         lines.push(`There are currently ${totalCount} packages in DefinitelyTyped.`);
         lines.push(``);
-        lines.push(`Of them, ${nonNpmCount} are non-npm packages.`);
+        lines.push(`Of them, ${nonNpmCount} are non-npm packages and ${conflictCount} intentionally conflict with npm packages.`);
         lines.push(``);
-        lines.push(`Of the remaining ${totalCount - nonNpmCount} packages:`);
+        lines.push(`Of the remaining ${totalCount - nonNpmCount - conflictCount} packages:`);
         lines.push(``);
         if (errorRows.length > 0) lines.push(`- ${errorRows.length} had errors while fetching info.`);
         if (notInRegistryRows.length > 0) {
