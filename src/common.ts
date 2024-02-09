@@ -58,7 +58,7 @@ export type NpmManifest = v.Infer<typeof NpmManifest>;
 export const DTPackageJson = v.object({
     name: v.string().optional(),
     version: v.string().optional(),
-    nonNpm: v.union(v.boolean(), v.literal("conflict")).optional(),
+    nonNpm: v.union(v.boolean(), v.literal(`conflict`)).optional(),
     type: v.string().optional(),
     exports: v.unknown().optional(),
 });
