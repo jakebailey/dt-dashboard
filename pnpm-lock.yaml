@@ -21,8 +21,8 @@ dependencies:
     specifier: ^9.0.3
     version: 9.0.3
   npm-high-impact:
-    specifier: ^1.5.0
-    version: 1.5.0
+    specifier: ^1.6.0
+    version: 1.6.0
   ora:
     specifier: ^8.0.1
     version: 8.0.1
@@ -1742,8 +1742,8 @@ packages:
       npm-normalize-package-bin: 3.0.1
     dev: false
 
-  /npm-high-impact@1.5.0:
-    resolution: {integrity: sha512-ObwWs9zh1Sxm6FIVNeNX+kcpzIcTc2deP8GnNKlrIlp7sKRUVg6XxnGeAgERcpBd6CmbM2fGgcSJmDWQRO2HNQ==}
+  /npm-high-impact@1.6.0:
+    resolution: {integrity: sha512-QWbJUcbvytzvgrhfE2Kw4HTLOlxgtA0UcpicfHJ8o+fi38CsuI4PS50xG5lCQ6wgzSrRjLzhmyXC3pmYq4noeQ==}
     dev: false
 
   /npm-install-checks@6.3.0:
