@@ -29,7 +29,11 @@
         "**/*-lock.json",
         "dist/**",
         "coverage/**",
-        ".data/**"
+        ".data/**",
+        "pnpm-lock.yaml",
+        "cacheIn/**",
+        "cacheOut/**",
+        "rawSite/**"
     ],
     "plugins": [
         "https://plugins.dprint.dev/typescript-0.87.1.wasm",

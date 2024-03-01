@@ -255,11 +255,13 @@ export class CheckCommand extends Command {
                 // ignore
             }
         }
-       
+
         // TODO: we should always check latest to see if the entire thing has been deprecated.
         const isDeprecated = !!fullManifest.deprecated;
 
-        if (cached?.kind === `found` && cached.current === fullManifest.version && cached.isDeprecated === isDeprecated) {
+        if (
+            cached?.kind === `found` && cached.current === fullManifest.version && cached.isDeprecated === isDeprecated
+        ) {
             return cached;
         }
 

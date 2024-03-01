@@ -139,8 +139,6 @@ export class GenerateSiteCommand extends Command {
                         packageJsonExportsMismatchRows.push(row);
                     }
 
-                    
-
                     break;
                 }
                 case `not-in-registry`:
@@ -166,9 +164,9 @@ export class GenerateSiteCommand extends Command {
                 case `non-npm`:
                     nonNpmCount++;
                     continue;
-                    case `conflict`:
-                        conflictCount++;
-                        continue;
+                case `conflict`:
+                    conflictCount++;
+                    continue;
                 default:
                     // d.status.kind satisfies never;
             }
@@ -186,7 +184,9 @@ export class GenerateSiteCommand extends Command {
 
         lines.push(`There are currently ${totalCount} packages in DefinitelyTyped.`);
         lines.push(``);
-        lines.push(`Of them, ${nonNpmCount} are non-npm packages and ${conflictCount} intentionally conflict with npm packages.`);
+        lines.push(
+            `Of them, ${nonNpmCount} are non-npm packages and ${conflictCount} intentionally conflict with npm packages.`,
+        );
         lines.push(``);
         lines.push(`Of the remaining ${totalCount - nonNpmCount - conflictCount} packages:`);
         lines.push(``);
