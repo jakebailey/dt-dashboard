@@ -199,8 +199,11 @@ export class CheckCommand extends Command {
         const specifierOrLatest = data.isLatest ? `latest` : specifier;
 
         let fullManifest: NpmManifest;
+        let latestManifest: NpmManifest;
         try {
             fullManifest = await this.#getManifest(data.unescapedName, specifierOrLatest, true);
+            latestManifest = specifierOrLatest === `latest` ? fullManifest
+                : await this.#getManifest(data.unescapedName, `latest`, true);
         } catch (_e) {
             const e = _e as { code?: string; versions?: string[]; };
 
@@ -256,8 +259,7 @@ export class CheckCommand extends Command {
             }
         }
 
-        // TODO: we should always check latest to see if the entire thing has been deprecated.
-        const isDeprecated = !!fullManifest.deprecated;
+        const isDeprecated = !!fullManifest.deprecated || !!latestManifest.deprecated;
 
         if (
             cached?.kind === `found` && cached.current === fullManifest.version && cached.isDeprecated === isDeprecated
