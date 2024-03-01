@@ -38,6 +38,7 @@ export class GenerateSiteCommand extends Command {
             currentPackageLink: string,
             statusOutdated: string,
             statusNotNeeded: string,
+            deprecated: string,
             packageJsonTypeMatches: string,
             packageJsonExportsMismatch: string,
         ];
@@ -46,8 +47,9 @@ export class GenerateSiteCommand extends Command {
             currentPackageLink: 1,
             statusOutdated: 2,
             statusNotNeeded: 3,
-            packageJsonTypeMatches: 4,
-            packageJsonExportsMismatch: 5,
+            deprecated: 4,
+            packageJsonTypeMatches: 5,
+            packageJsonExportsMismatch: 6,
         };
 
         const errorRows: Row[] = [];
@@ -57,6 +59,7 @@ export class GenerateSiteCommand extends Command {
         const outOfDateRows: Row[] = [];
         const minorOutOfDateRows: Row[] = [];
         const dtNotNeededRows: Row[] = [];
+        const deprecatedRows: Row[] = [];
         const packageJsonTypeMismatchRows: Row[] = [];
         const packageJsonExportsMismatchRows: Row[] = [];
 
@@ -72,6 +75,7 @@ export class GenerateSiteCommand extends Command {
                 `✅`,
                 `✅`,
                 `✅`,
+                `✅`,
             ];
 
             switch (d.status.kind) {
@@ -83,6 +87,11 @@ export class GenerateSiteCommand extends Command {
                     errorRows.push(row);
                     break;
                 case `found`: {
+                    if (d.status.isDeprecated) {
+                        row[RowIndex.deprecated] = `❌`;
+                        deprecatedRows.push(row);
+                    }
+
                     const hasProblem = d.status.hasTypes || d.status.outOfDate;
                     if (!hasProblem) {
                         continue;
@@ -129,6 +138,8 @@ export class GenerateSiteCommand extends Command {
                         row[RowIndex.packageJsonExportsMismatch] = `❌`;
                         packageJsonExportsMismatchRows.push(row);
                     }
+
+                    
 
                     break;
                 }
@@ -204,6 +215,9 @@ export class GenerateSiteCommand extends Command {
         if (minorOutOfDateRows.length > 0) {
             lines.push(`- ${minorOutOfDateRows.length} are out of date minorly (excluding 0.x packages).`);
         }
+        if (deprecatedRows.length > 0) {
+            lines.push(`- ${deprecatedRows.length} are for a package that has been deprecated.`);
+        }
         if (packageJsonTypeMismatchRows.length > 0) {
             lines.push(`- ${packageJsonTypeMismatchRows.length} have a \`package.json\` type mismatch.`);
         }
@@ -213,8 +227,8 @@ export class GenerateSiteCommand extends Command {
         lines.push(``);
 
         function pushRows(rows: Row[]) {
-            lines.push(`| Types | Current | Outdated? | DT Needed? | \`type=\` OK? | \`exports\` OK? |`);
-            lines.push(`| --- | --- | --- | --- | --- | --- |`);
+            lines.push(`| Types | Current | Outdated? | DT Needed? | Deprecated? | \`type=\` OK? | \`exports\` OK? |`);
+            lines.push(`| --- | --- | --- | --- | --- | --- | --- |`);
             for (const row of rows) {
                 lines.push(`| ${row.join(` | `)} |`);
             }
@@ -242,6 +256,7 @@ export class GenerateSiteCommand extends Command {
         pushSection(`Unpublished`, unpublishedRows);
         pushSection(`Unmatched versions`, unmatchedVersionRows);
         pushSection(`Potentially removable`, dtNotNeededRows);
+        pushSection(`Deprecated`, deprecatedRows);
         pushSection(`Out of date`, outOfDateRows);
         pushSection(`Out of date minorly`, minorOutOfDateRows);
         pushSection(`\`package.json\` type mismatch`, packageJsonTypeMismatchRows);

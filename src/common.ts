@@ -10,6 +10,7 @@ export const CachedStatus = v.union(
         hasTypes: v.union(v.literal(`package.json`), v.literal(`entrypoint`), v.literal(`other`)).optional(),
         packageJsonTypeMatches: v.boolean(),
         exportsSimilar: v.boolean(),
+        isDeprecated: v.boolean(),
     }),
     v.object({
         kind: v.literal(`not-in-registry`),
@@ -52,6 +53,7 @@ export const NpmManifest = v.object({
     typings: v.unknown().optional(),
     exports: v.unknown().optional(),
     type: v.string().optional(),
+    deprecated: v.unknown().optional(),
 });
 export type NpmManifest = v.Infer<typeof NpmManifest>;
 

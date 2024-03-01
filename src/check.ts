@@ -255,8 +255,11 @@ export class CheckCommand extends Command {
                 // ignore
             }
         }
+       
+        // TODO: we should always check latest to see if the entire thing has been deprecated.
+        const isDeprecated = !!fullManifest.deprecated;
 
-        if (cached?.kind === `found` && fullManifest.version === cached.current) {
+        if (cached?.kind === `found` && cached.current === fullManifest.version && cached.isDeprecated === isDeprecated) {
             return cached;
         }
 
@@ -353,6 +356,7 @@ export class CheckCommand extends Command {
             hasTypes,
             packageJsonTypeMatches: (data.packageJsonType ?? `commonjs`) === (fullManifest.type ?? `commonjs`),
             exportsSimilar: exportsSimilar(data.exports, fullManifest.exports),
+            isDeprecated,
         };
     }
 
