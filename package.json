@@ -26,7 +26,7 @@
         "typescript": "^5.3.3"
     },
     "dependencies": {
-        "@badrap/valita": "^0.3.0",
+        "@badrap/valita": "^0.3.8",
         "clipanion": "4.0.0-rc.3",
         "glob": "^10.3.10",
         "make-fetch-happen": "^13.0.0",
