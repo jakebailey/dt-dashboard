@@ -41,8 +41,8 @@ dependencies:
 
 devDependencies:
   '@tsconfig/node18':
-    specifier: ^18.2.2
-    version: 18.2.2
+    specifier: ^18.2.4
+    version: 18.2.4
   '@types/make-fetch-happen':
     specifier: ^10.0.4
     version: 10.0.4
@@ -339,8 +339,8 @@ packages:
       '@sigstore/protobuf-specs': 0.2.1
     dev: false
 
-  /@tsconfig/node18@18.2.2:
-    resolution: {integrity: sha512-d6McJeGsuoRlwWZmVIeE8CUA27lu6jLjvv1JzqmpsytOYYbVi1tHZEnwCNVOXnj4pyLvneZlFlpXUK+X9wBWyw==}
+  /@tsconfig/node18@18.2.4:
+    resolution: {integrity: sha512-5xxU8vVs9/FNcvm3gE07fPbn9tl6tqGGWA9tSlwsUEkBxtRnTsNmwrV8gasZ9F/EobaSv9+nu8AxUKccw77JpQ==}
     dev: true
 
   /@tufjs/canonical-json@2.0.0:

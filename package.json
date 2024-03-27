@@ -13,7 +13,7 @@
     "author": "",
     "license": "MIT",
     "devDependencies": {
-        "@tsconfig/node18": "^18.2.2",
+        "@tsconfig/node18": "^18.2.4",
         "@types/make-fetch-happen": "^10.0.4",
         "@types/node": "^20.11.17",
         "@types/pacote": "^11.1.8",
