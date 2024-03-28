@@ -30,7 +30,7 @@
         "clipanion": "4.0.0-rc.3",
         "glob": "^10.3.10",
         "make-fetch-happen": "^13.0.0",
-        "minimatch": "^9.0.3",
+        "minimatch": "^9.0.4",
         "npm-high-impact": "^1.6.0",
         "ora": "^8.0.1",
         "p-queue": "^8.0.1",
