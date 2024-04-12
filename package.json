@@ -34,7 +34,7 @@
         "npm-high-impact": "^1.6.0",
         "ora": "^8.0.1",
         "p-queue": "^8.0.1",
-        "pacote": "^17.0.6",
+        "pacote": "^17.0.7",
         "pretty-ms": "^9.0.0",
         "semver": "^7.6.0"
     },
