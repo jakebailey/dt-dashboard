@@ -29,7 +29,7 @@
         "@badrap/valita": "^0.3.8",
         "clipanion": "4.0.0-rc.3",
         "glob": "^10.3.12",
-        "make-fetch-happen": "^13.0.0",
+        "make-fetch-happen": "^13.0.1",
         "minimatch": "^9.0.4",
         "npm-high-impact": "^1.6.0",
         "ora": "^8.0.1",
