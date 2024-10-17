@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@badrap/valita':
-    specifier: ^0.3.8
-    version: 0.3.8
+    specifier: ^0.3.11
+    version: 0.3.11
   clipanion:
     specifier: 4.0.0-rc.3
     version: 4.0.0-rc.3(typanion@3.14.0)
@@ -104,8 +104,8 @@ packages:
       picocolors: 1.0.0
     dev: true
 
-  /@badrap/valita@0.3.8:
-    resolution: {integrity: sha512-aqzw+V8XSOkYlu7Aq1QhXqfxz5V6Vm6e0p6XZYZDEaGwSc6ac9OJ4B7U4BOo3mm7FzzRRHJ5yizeGKnj+REjBQ==}
+  /@badrap/valita@0.3.11:
+    resolution: {integrity: sha512-oak0W8bycFjnrLeVCVvZqkOWTGh74wCPKUxGLJyhRukRs+V/hQdfZp1eDcQE4Gf3UrtJWfR/Ou4Xe0DZqJZ2FA==}
     engines: {node: '>= 16'}
     dev: false
 
