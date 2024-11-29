@@ -27,7 +27,7 @@
     },
     "dependencies": {
         "@badrap/valita": "^0.3.8",
-        "clipanion": "4.0.0-rc.3",
+        "clipanion": "4.0.0-rc.4",
         "glob": "^10.3.12",
         "make-fetch-happen": "^13.0.0",
         "minimatch": "^9.0.4",
