@@ -36,7 +36,7 @@
         "p-queue": "^8.0.1",
         "pacote": "^17.0.6",
         "pretty-ms": "^9.0.0",
-        "semver": "^7.6.0"
+        "semver": "^7.6.3"
     },
     "engines": {
         "node": ">= 22"
