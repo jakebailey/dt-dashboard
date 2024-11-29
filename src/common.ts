@@ -34,7 +34,7 @@ export const CachedStatus = v.union(
 );
 export type CachedStatus = v.Infer<typeof CachedStatus>;
 
-export const dashboardVersion = 8 as const;
+export const dashboardVersion = 8;
 
 export const CachedInfo = v.object({
     dashboardVersion: v.literal(dashboardVersion),
