@@ -18,33 +18,28 @@
         "@types/node": "^22.10.1",
         "@types/pacote": "^11.1.8",
         "@types/semver": "^7.5.8",
-        "@typescript-eslint/eslint-plugin": "^7.4.0",
-        "@typescript-eslint/parser": "^7.4.0",
-        "eslint": "^8.57.0",
-        "eslint-plugin-simple-import-sort": "^12.0.0",
-        "eslint-plugin-unicorn": "^51.0.1",
-        "typescript": "^5.4.3"
+        "@typescript-eslint/eslint-plugin": "^7.18.0",
+        "@typescript-eslint/parser": "^7.18.0",
+        "eslint": "^8.57.1",
+        "eslint-plugin-simple-import-sort": "^12.1.1",
+        "eslint-plugin-unicorn": "^56.0.1",
+        "typescript": "^5.7.2"
     },
     "dependencies": {
-        "@badrap/valita": "^0.3.8",
-        "clipanion": "4.0.0-rc.3",
-        "glob": "^10.3.12",
-        "make-fetch-happen": "^13.0.0",
-        "minimatch": "^9.0.4",
-        "npm-high-impact": "^1.6.0",
-        "ora": "^8.0.1",
+        "@badrap/valita": "^0.3.12",
+        "clipanion": "4.0.0-rc.4",
+        "glob": "^11.0.0",
+        "make-fetch-happen": "^14.0.3",
+        "minimatch": "^10.0.1",
+        "npm-high-impact": "^1.9.0",
+        "ora": "^8.1.1",
         "p-queue": "^8.0.1",
-        "pacote": "^17.0.6",
-        "pretty-ms": "^9.0.0",
-        "semver": "^7.6.0"
+        "pacote": "^21.0.0",
+        "pretty-ms": "^9.2.0",
+        "semver": "^7.6.3"
     },
     "engines": {
         "node": ">= 22"
-    },
-    "pnpm": {
-        "overrides": {
-            "npm-pick-manifest": "9.0.1"
-        }
     },
     "packageManager": "pnpm@9.14.3+sha512.c0f53ee99477ed969b82b289ad011a5d16bf1623c957e7f29eabe8d0c00b574c29b8c7f54f6c67ee710c73f285c8154d07ce44b46fe2c0eeb476a90441bac371"
 }
