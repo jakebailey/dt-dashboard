@@ -23,7 +23,7 @@
         "eslint": "^8.57.0",
         "eslint-plugin-simple-import-sort": "^12.0.0",
         "eslint-plugin-unicorn": "^51.0.1",
-        "typescript": "^5.4.3"
+        "typescript": "^5.7.2"
     },
     "dependencies": {
         "@badrap/valita": "^0.3.8",
