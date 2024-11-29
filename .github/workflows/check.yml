@@ -9,7 +9,7 @@ on:
     # Daily at 7AM Pacific / 14:00 UTC
     - cron: '0 14 * * *'
 
-concurrency: 1
+concurrency: 'check'
 
 permissions:
   contents: read
