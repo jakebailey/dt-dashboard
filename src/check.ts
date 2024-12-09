@@ -31,7 +31,7 @@ interface TypingsData {
     subDirectoryPath: string;
     major: number;
     minor: number;
-    nonNpm: boolean | "conflict" | undefined;
+    nonNpm: boolean | `conflict` | undefined;
     isLatest: boolean;
     packageJsonType: string | undefined;
     exports: unknown;
@@ -268,7 +268,7 @@ export class CheckCommand extends Command {
         }
 
         let outOfDate: `major` | `minor` | `too-new` | undefined;
-        let hasTypes: "package.json" | "entrypoint" | "other" | undefined;
+        let hasTypes: `package.json` | `entrypoint` | `other` | undefined;
 
         if (data.isLatest) {
             if (
@@ -436,7 +436,6 @@ export class CheckCommand extends Command {
 }
 
 function compareComparableValues(a: string | undefined, b: string | undefined) {
-    // eslint-disable-next-line unicorn/no-nested-ternary
     return a === b ? 0 : a === undefined ? -1 : b === undefined ? 1 : a < b ? -1 : 1;
 }
 

@@ -75,12 +75,12 @@ const MetadataFile = v.object({
 });
 type MetadataFile = v.Infer<typeof MetadataFile>;
 
-type MetadataDirectory = {
+interface MetadataDirectory {
     type: `directory`;
     name?: string | undefined;
     path?: string | undefined;
     files?: (MetadataFile | MetadataDirectory)[] | undefined;
-};
+}
 const MetadataDirectory: v.Type<MetadataDirectory> = v.object({
     type: v.literal(`directory`),
     name: v.string().optional(),

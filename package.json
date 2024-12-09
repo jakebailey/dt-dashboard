@@ -13,17 +13,18 @@
     "author": "",
     "license": "MIT",
     "devDependencies": {
+        "@stylistic/eslint-plugin": "^2.12.0",
         "@tsconfig/node22": "^22.0.0",
         "@types/make-fetch-happen": "^10.0.4",
         "@types/node": "^22.10.1",
         "@types/pacote": "^11.1.8",
         "@types/semver": "^7.5.8",
-        "@typescript-eslint/eslint-plugin": "^7.18.0",
-        "@typescript-eslint/parser": "^7.18.0",
-        "eslint": "^8.57.1",
+        "eslint": "^9.16.0",
         "eslint-plugin-simple-import-sort": "^12.1.1",
         "eslint-plugin-unicorn": "^56.0.1",
-        "typescript": "^5.7.2"
+        "globals": "^15.13.0",
+        "typescript": "^5.7.2",
+        "typescript-eslint": "^8.17.0"
     },
     "dependencies": {
         "@badrap/valita": "^0.4.2",
