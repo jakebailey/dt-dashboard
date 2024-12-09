@@ -15,14 +15,9 @@
         "textWrap": "always",
         "lineWidth": 80,
     },
-    "prettier": {
-        "associations": [
-            "**/*.{yaml,yml}",
-        ],
-        "yml.tabWidth": 2,
-        "yaml.tabWidth": 2,
-        "yml.singleQuote": true,
-        "yaml.singleQuote": true,
+    "yaml": {
+        "indentWidth": 2,
+        "quotes": "preferSingle",
     },
     "excludes": [
         "**/node_modules",
@@ -36,9 +31,9 @@
         "rawSite/**",
     ],
     "plugins": [
-        "https://plugins.dprint.dev/typescript-0.89.3.wasm",
-        "https://plugins.dprint.dev/json-0.19.2.wasm",
-        "https://plugins.dprint.dev/markdown-0.16.4.wasm",
-        "https://plugins.dprint.dev/prettier-0.38.1.json@ae9b60b1ca7e22223cb47325b3d42c681444b46863d28ed92edc426f8a177e58",
+        "https://plugins.dprint.dev/typescript-0.93.3.wasm",
+        "https://plugins.dprint.dev/json-0.19.4.wasm",
+        "https://plugins.dprint.dev/markdown-0.17.8.wasm",
+        "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.5.0.wasm",
     ],
 }
