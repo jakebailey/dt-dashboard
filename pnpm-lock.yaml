@@ -70,8 +70,8 @@ importers:
         specifier: ^56.0.1
         version: 56.0.1(eslint@9.16.0)
       globals:
-        specifier: ^15.13.0
-        version: 15.13.0
+        specifier: ^15.15.0
+        version: 15.15.0
       typescript:
         specifier: ^5.7.2
         version: 5.7.2
@@ -682,8 +682,8 @@ packages:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
     engines: {node: '>=18'}
 
-  globals@15.13.0:
-    resolution: {integrity: sha512-49TewVEz0UxZjr1WYYsWpPrhyC/B/pA8Bq0fUmet2n+eR7yn0IvNzNaoBwnK6mdkzcN+se7Ez9zUgULTz2QH4g==}
+  globals@15.15.0:
+    resolution: {integrity: sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==}
     engines: {node: '>=18'}
 
   graceful-fs@4.2.11:
@@ -1924,7 +1924,7 @@ snapshots:
       core-js-compat: 3.39.0
       eslint: 9.16.0
       esquery: 1.6.0
-      globals: 15.13.0
+      globals: 15.15.0
       indent-string: 4.0.0
       is-builtin-module: 3.2.1
       jsesc: 3.0.2
@@ -2099,7 +2099,7 @@ snapshots:
 
   globals@14.0.0: {}
 
-  globals@15.13.0: {}
+  globals@15.15.0: {}
 
   graceful-fs@4.2.11: {}
 
