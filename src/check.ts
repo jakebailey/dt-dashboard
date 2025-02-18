@@ -119,7 +119,7 @@ export class CheckCommand extends Command {
             path.dirname(packageJsonPath),
         );
 
-        assert(packageJson.version);
+        assert.ok(packageJson.version);
         const version = new semver.SemVer(packageJson.version);
 
         const typesNameWithoutPrefix = removeTypesPrefix(packageJson.name);
