@@ -24,8 +24,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1
       npm-high-impact:
-        specifier: ^1.9.0
-        version: 1.9.0
+        specifier: ^1.10.0
+        version: 1.10.0
       ora:
         specifier: ^8.2.0
         version: 8.2.0
@@ -1020,8 +1020,8 @@ packages:
     resolution: {integrity: sha512-IxaQZDMsqfQ2Lz37VvyyEtKLe8FsRZuysmedy/N06TU1RyVppYKXrO4xIhR0F+7ubIBox6Q7nir6fQI3ej39iA==}
     engines: {node: ^18.17.0 || >=20.5.0}
 
-  npm-high-impact@1.9.0:
-    resolution: {integrity: sha512-t+qMbiQtdLYjqjCqrRPVoR1JXMSEwt1wVarG6n4ht0x0iUxx1zF7Bi8ZZnAdffMqBd2t2LLkoDxty2EmipdGDw==}
+  npm-high-impact@1.10.0:
+    resolution: {integrity: sha512-pkskm/LwoA7V+a7Y0ad4vwhNNbw9fwjv16mX8852x+WgzAfklwmCTG+RDgXa8kPmq5nIow83SNeBC9ebBQKS+A==}
 
   npm-install-checks@7.1.1:
     resolution: {integrity: sha512-u6DCwbow5ynAX5BdiHQ9qvexme4U3qHW3MWe5NqH+NeBm0LbiH6zvGjNNew1fY+AZZUtVHbOPF3j7mJxbUzpXg==}
@@ -2413,7 +2413,7 @@ snapshots:
     dependencies:
       npm-normalize-package-bin: 4.0.0
 
-  npm-high-impact@1.9.0: {}
+  npm-high-impact@1.10.0: {}
 
   npm-install-checks@7.1.1:
     dependencies:
