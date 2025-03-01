@@ -17,7 +17,7 @@
         "@stylistic/eslint-plugin": "^4.1.0",
         "@tsconfig/node22": "^22.0.0",
         "@types/make-fetch-happen": "^10.0.4",
-        "@types/node": "^22.13.5",
+        "@types/node": "^22.13.8",
         "@types/pacote": "^11.1.8",
         "@types/semver": "^7.5.8",
         "eslint": "^9.21.0",
