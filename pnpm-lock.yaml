@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@badrap/valita':
-        specifier: ^0.4.2
-        version: 0.4.2
+        specifier: ^0.4.3
+        version: 0.4.3
       clipanion:
         specifier: 4.0.0-rc.4
         version: 4.0.0-rc.4(typanion@3.14.0)
@@ -92,8 +92,8 @@ packages:
     resolution: {integrity: sha512-Ed61U6XJc3CVRfkERJWDz4dJwKe7iLmmJsbOGu9wSloNSFttHV0I8g6UAgb7qnK5ly5bGLPd4oXZlxCdANBOWQ==}
     engines: {node: '>=6.9.0'}
 
-  '@badrap/valita@0.4.2':
-    resolution: {integrity: sha512-Mwmr7k2iK0Yy0POLnAFUgab2mxKYeIsYXHY7sg3jo8XFsFHbG0SBmTcktXD0uW8N4WZePKf8s68QV7QDTGSdHA==}
+  '@badrap/valita@0.4.3':
+    resolution: {integrity: sha512-C9iZSrVlTb610dxZ2oatK5LwefaHv0Q9eYfVDH3co846x7WinhCfc8jCDTE55yM8WxlmOfX2ckKmsSr7KzZ/gg==}
     engines: {node: '>= 18'}
 
   '@eslint-community/eslint-utils@4.4.1':
@@ -1402,7 +1402,7 @@ snapshots:
 
   '@babel/helper-validator-identifier@7.25.9': {}
 
-  '@badrap/valita@0.4.2': {}
+  '@badrap/valita@0.4.3': {}
 
   '@eslint-community/eslint-utils@4.4.1(eslint@9.21.0)':
     dependencies:
