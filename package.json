@@ -25,7 +25,7 @@
         "eslint-plugin-unicorn": "^57.0.0",
         "globals": "^16.0.0",
         "typescript": "^5.7.3",
-        "typescript-eslint": "^8.25.0"
+        "typescript-eslint": "^8.26.1"
     },
     "dependencies": {
         "@badrap/valita": "^0.4.2",
