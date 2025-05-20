@@ -49,8 +49,8 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0(eslint@9.21.0)(typescript@5.7.3)
       '@tsconfig/node22':
-        specifier: ^22.0.0
-        version: 22.0.0
+        specifier: ^22.0.2
+        version: 22.0.2
       '@types/make-fetch-happen':
         specifier: ^10.0.4
         version: 10.0.4
@@ -241,8 +241,8 @@ packages:
     peerDependencies:
       eslint: '>=9.0.0'
 
-  '@tsconfig/node22@22.0.0':
-    resolution: {integrity: sha512-twLQ77zevtxobBOD4ToAtVmuYrpeYUh3qh+TEp+08IWhpsrIflVHqQ1F1CiPxQGL7doCdBIOOCF+1Tm833faNg==}
+  '@tsconfig/node22@22.0.2':
+    resolution: {integrity: sha512-Kmwj4u8sDRDrMYRoN9FDEcXD8UpBSaPQQ24Gz+Gamqfm7xxn+GBR7ge/Z7pK8OXNGyUzbSwJj+TH6B+DS/epyA==}
 
   '@tufjs/canonical-json@2.0.0':
     resolution: {integrity: sha512-yVtV8zsdo8qFHe+/3kw81dSLyF7D576A5cCFCi4X7B39tWT7SekaEFUnvnWJHz+9qO7qJTah1JbrDjWKqFtdWA==}
@@ -1590,7 +1590,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@tsconfig/node22@22.0.0': {}
+  '@tsconfig/node22@22.0.2': {}
 
   '@tufjs/canonical-json@2.0.0': {}
 
