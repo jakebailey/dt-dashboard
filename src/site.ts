@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/no-array-push-push */
 import * as fs from "node:fs";
 import path from "node:path";
 
