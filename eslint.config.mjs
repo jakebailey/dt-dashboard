@@ -131,6 +131,7 @@ export default tseslint.config(
             "unicorn/prefer-string-replace-all": "off", // Bad suggestion for old targets
             "unicorn/no-nested-ternary": "off",
             "unicorn/prefer-single-call": "off",
+            "unicorn/no-immediate-mutation": "off",
         },
     },
     {

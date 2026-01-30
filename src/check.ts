@@ -369,7 +369,6 @@ export class CheckCommand extends Command {
     async #getManifest(name: string, specifier: string, fullMetadata: boolean) {
         const result = await this.#pacoteQueue.add(
             () => pacote.manifest(`${name}@${specifier}`, { fullMetadata, packumentCache: this.#packumentCache }),
-            { throwOnTimeout: true },
         );
         return NpmManifest.parse(result, { mode: `passthrough` });
     }
@@ -377,7 +376,6 @@ export class CheckCommand extends Command {
     async #getPackument(name: string) {
         const result = await this.#pacoteQueue.add(
             () => pacote.packument(name, { packumentCache: this.#packumentCache }),
-            { throwOnTimeout: true },
         );
         return result;
     }
@@ -430,7 +428,6 @@ export class CheckCommand extends Command {
                 // this.#log(`${url} ${response.status} ${response.statusText} ${after - before}ms`);
                 return response;
             },
-            { throwOnTimeout: true },
         );
     }
 }
